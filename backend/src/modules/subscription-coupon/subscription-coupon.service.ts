@@ -120,10 +120,7 @@ const getManySubscriptionCoupon = async (
   const { searchKey = '', showPerPage = 10, pageNo = 1 } = query;
   // Build the search filter based on the search key
   const searchFilter = {
-    $or: [
-      // { fieldName: { $regex: searchKey, $options: 'i' } },
-      // Add more fields as needed
-    ],
+    $or: [{ code: { $regex: searchKey, $options: 'i' } }],
   };
   // Calculate the number of items to skip based on the page number
   const skipItems = (pageNo - 1) * showPerPage;
