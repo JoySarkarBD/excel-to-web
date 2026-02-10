@@ -42,6 +42,9 @@
   "author": "Joy Sarkar",
   "license": "ISC",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.986.0",
+    "@aws-sdk/lib-storage": "^3.986.0",
+    "@aws-sdk/s3-request-presigner": "^3.986.0",
     "@keycloak/keycloak-admin-client": "^26.5.2",
     "axios": "^1.13.2",
     "bcryptjs": "^3.0.3",

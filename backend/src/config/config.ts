@@ -11,6 +11,11 @@ interface Config {
   NODE_ENV: string;
   SALT_ROUNDS: number;
   SUBSCRIPTION_TRIAL_DAYS: number;
+  AWS_REGION: string;
+  AWS_DEFAULT_REGION: string;
+  AWS_S3_BUCKET: string;
+  AWS_SECRET_ACCESS_KEY: string;
+  AWS_ACCESS_KEY: string;
   JWT_SECRET: string;
   JWT_EXPIRATION_TIME: string;
   EMAIL_HOST: string;
@@ -52,6 +57,11 @@ const config: Config = {
   EMAIL_PORT: parseInt(process.env.EMAIL_PORT as string, 10),
   EMAIL_USER: process.env.EMAIL_USER as string,
   EMAIL_PASSWORD: process.env.EMAIL_PASSWORD as string,
+  AWS_REGION: process.env.AWS_REGION as string,
+  AWS_DEFAULT_REGION: process.env.AWS_DEFAULT_REGION as string,
+  AWS_S3_BUCKET: process.env.AWS_S3_BUCKET as string,
+  AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY as string,
+  AWS_ACCESS_KEY: process.env.AWS_ACCESS_KEY as string,
   MAX_JSON_SIZE: process.env.MAX_JSON_SIZE as string,
   MAX_FILE_SIZE: parseInt(process.env.MAX_FILE_SIZE as string, 10),
   URL_ENCODED: process.env.URL_ENCODED === 'true' ? true : false,
