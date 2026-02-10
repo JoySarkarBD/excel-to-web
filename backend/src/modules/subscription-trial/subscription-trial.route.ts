@@ -6,7 +6,6 @@ import { createSubscriptionTrial } from './subscription-trial.controller';
 
 //Import validation from corresponding module
 import authorizedRoles from '../../middlewares/authorized-roles';
-import checkSubscriptionValidity from '../../middlewares/check-subscription-validity';
 import isAuthorized from '../../middlewares/is-authorized';
 import { UserRole } from '../../models';
 
@@ -20,14 +19,12 @@ const router = Router();
  * @access Private
  * @param {function} isAuthorized - Middleware to check if the user is authenticated
  * @param {function} authorizedRoles - Middleware to check if the user has the required role(s) (TRANSPORT_MANAGER, STANDALONE_USER)
- * @param {function} checkSubscriptionValidity - Middleware to check if the user has an active subscription or trial before allowing access to this route
  * @param {function} controller - ['createSubscriptionTrial']
  */
 router.post(
   '/',
   isAuthorized(),
   authorizedRoles([UserRole.TRANSPORT_MANAGER, UserRole.STANDALONE_USER]),
-  checkSubscriptionValidity,
   createSubscriptionTrial
 );
 
