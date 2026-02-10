@@ -60,19 +60,15 @@ const updateSubscriptionCoupon = async (
   id: IdOrIdsInput['id'],
   data: UpdateSubscriptionCouponInput
 ): Promise<Partial<ISubscriptionCoupon | null>> => {
-  // Check for duplicate (filed) combination
+  // Check for duplicate code if the code is being updated
   const existingSubscriptionCoupon = await SubscriptionCoupon.findOne({
     _id: { $ne: id }, // Exclude the current document
-    $or: [
-      {
-        /* filedName: data.filedName, */
-      },
-    ],
+    code: data.code ? data.code.toUpperCase().trim() : undefined, // Check for duplicate code if it's being updated
   }).lean();
   // Prevent duplicate updates
   if (existingSubscriptionCoupon) {
     throw new Error(
-      'Duplicate detected: Another subscription-coupon with the same fieldName already exists.'
+      'Duplicate detected: Another subscription-coupon with the same code already exists.'
     );
   }
   // Proceed to update the subscription-coupon
