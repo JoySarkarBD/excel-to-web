@@ -15,6 +15,8 @@ export interface ISubscriptionInvoice extends Document {
   amount?: number;
   status?: SubscriptionInvoiceStatus;
   dueDate?: Date;
+  stripeInvoiceId?: string;
+  couponId?: mongoose.Types.ObjectId;
 }
 
 // Define the SubscriptionInvoice schema
@@ -45,6 +47,13 @@ const SubscriptionInvoiceSchema: Schema<ISubscriptionInvoice> = new Schema(
     dueDate: {
       type: Date, // Due date for the invoice payment
     },
+    stripeInvoiceId: {
+      type: String,
+    }, // ID of the corresponding Stripe invoice (if applicable)
+    couponId: {
+      type: Schema.Types.ObjectId,
+      ref: 'SubscriptionCoupon',
+    }, // Reference to the SubscriptionCoupon model (optional)
   },
   { timestamps: true, versionKey: false }
 );
