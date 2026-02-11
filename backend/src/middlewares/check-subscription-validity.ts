@@ -22,7 +22,6 @@ const checkSubscriptionValidity = async (req: Request, res: Response, next: Next
   try {
     // Check the user last subscription plan from the database and calculate remaining days
     const userSubscription = await getSubscriptionRemainingDays(user._id);
-
     // If no active subscription or trial found, return a forbidden response
     if (!userSubscription) {
       return ServerResponse(
@@ -43,6 +42,10 @@ const checkSubscriptionValidity = async (req: Request, res: Response, next: Next
           )
         : 'N/A'
     );
+    // If the subscription is lifetime, allow access directly
+    if (userSubscription.isLifetime) {
+      next();
+    }
     // Check if the subscription or trial has expired based on endDate
     if (userSubscription.endDate && userSubscription.endDate < currentDate) {
       return ServerResponse(res, false, 403, 'Access denied. Subscription or trial has expired.');
