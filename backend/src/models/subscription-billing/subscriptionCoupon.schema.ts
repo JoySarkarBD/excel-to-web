@@ -11,6 +11,7 @@ export interface ISubscriptionCoupon extends Document {
   discountType: DiscountType;
   discountValue: number;
   isActive: boolean;
+  subscriptionPricings: mongoose.Types.ObjectId[]; // Reference to the subscription pricing(s) that this coupon applies to
   usedBy: mongoose.Types.ObjectId[]; // Array of user IDs who have used the coupon
   users: mongoose.Types.ObjectId[]; // Array of user IDs who can use the coupon
   createdBy: mongoose.Types.ObjectId;
@@ -38,6 +39,12 @@ const SubscriptionCouponSchema: Schema<ISubscriptionCoupon> = new Schema(
       required: true,
       default: true,
     }, // Indicates if the coupon is active and can be used
+    subscriptionPricings: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'SubscriptionPricing', // Reference to the SubscriptionPricing model
+      },
+    ], // Reference to the subscription pricing(s) that this coupon applies to
     usedBy: [
       {
         type: Schema.Types.ObjectId,

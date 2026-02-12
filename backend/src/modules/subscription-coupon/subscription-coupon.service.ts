@@ -1,7 +1,7 @@
 // Import the model
 import mongoose from 'mongoose';
 import { IdOrIdsInput, SearchQueryInput } from '../../handlers/common-zod-validator';
-import { ISubscriptionCoupon, SubscriptionCoupon, User } from '../../models';
+import { ISubscriptionCoupon, SubscriptionCoupon, SubscriptionPricing, User } from '../../models';
 import {
   CreateSubscriptionCouponInput,
   UpdateSubscriptionCouponInput,
@@ -43,6 +43,29 @@ const createSubscriptionCoupon = async (
       `Validation error: The following user IDs do not exist: ${nonExistingUserIds.join(', ')}`
     );
   }
+  // Validate subscription pricing IDs if provided
+  const subscriptionPricingIds = data.subscriptionPricings?.map(
+    (sp) => new mongoose.Types.ObjectId(sp)
+  );
+  const subscriptionPricingExistenceChecks = await SubscriptionPricing.find({
+    _id: { $in: subscriptionPricingIds },
+  })
+    .select('_id')
+    .lean();
+  // Extract existing subscription pricing IDs from the database results
+  const existingSubscriptionPricingIds = subscriptionPricingExistenceChecks.map((sp) =>
+    sp._id.toString()
+  );
+  // Identify any non-existing subscription pricing IDs from the input
+  const nonExistingSubscriptionPricingIds = subscriptionPricingIds?.filter(
+    (sp) => !existingSubscriptionPricingIds.includes(sp.toString())
+  );
+  // If there are any non-existing subscription pricing IDs, throw an error with details
+  if (nonExistingSubscriptionPricingIds && nonExistingSubscriptionPricingIds.length > 0) {
+    throw new Error(
+      `Validation error: The following subscription pricing IDs do not exist: ${nonExistingSubscriptionPricingIds.join(', ')}`
+    );
+  }
   // Proceed to create the new subscription-coupon
   const newSubscriptionCoupon = new SubscriptionCoupon(data);
   const savedSubscriptionCoupon = await newSubscriptionCoupon.save();
@@ -69,6 +92,42 @@ const updateSubscriptionCoupon = async (
   if (existingSubscriptionCoupon) {
     throw new Error(
       'Duplicate detected: Another subscription-coupon with the same code already exists.'
+    );
+  }
+  // Validate user IDs if provided
+  const userIds = data.users?.map((u) => new mongoose.Types.ObjectId(u));
+  const userExistenceChecks = await User.find({ _id: { $in: userIds } })
+    .select('_id')
+    .lean();
+  const existingUserIds = userExistenceChecks.map((u) => u._id.toString());
+  const nonExistingUserIds = userIds?.filter((u) => !existingUserIds.includes(u.toString()));
+  if (nonExistingUserIds && nonExistingUserIds.length > 0) {
+    throw new Error(
+      `Validation error: The following user IDs do not exist: ${nonExistingUserIds.join(', ')}`
+    );
+  }
+  // Validate subscription pricing IDs if provided
+  const subscriptionPricingIds = data.subscriptionPricings?.map(
+    (sp) => new mongoose.Types.ObjectId(sp)
+  );
+  // Check existence of subscription pricing IDs and identify any non-existing IDs
+  const subscriptionPricingExistenceChecks = await SubscriptionPricing.find({
+    _id: { $in: subscriptionPricingIds },
+  })
+    .select('_id')
+    .lean();
+  // Extract existing subscription pricing IDs from the database results
+  const existingSubscriptionPricingIds = subscriptionPricingExistenceChecks.map((sp) =>
+    sp._id.toString()
+  );
+  // Identify any non-existing subscription pricing IDs from the input
+  const nonExistingSubscriptionPricingIds = subscriptionPricingIds?.filter(
+    (sp) => !existingSubscriptionPricingIds.includes(sp.toString())
+  );
+  // If there are any non-existing subscription pricing IDs, throw an error with details
+  if (nonExistingSubscriptionPricingIds && nonExistingSubscriptionPricingIds.length > 0) {
+    throw new Error(
+      `Validation error: The following subscription pricing IDs do not exist: ${nonExistingSubscriptionPricingIds.join(', ')}`
     );
   }
   // Proceed to update the subscription-coupon

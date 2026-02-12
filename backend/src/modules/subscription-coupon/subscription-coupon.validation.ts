@@ -26,6 +26,13 @@ const zodCreateSubscriptionCouponSchema = z
     }),
     discountValue: z.number({ message: 'Discount value is required' }),
     isActive: z.boolean().optional(),
+    subscriptionPricings: z
+      .array(
+        z.string().refine(isMongoId, {
+          message: 'Subscription pricing ID must be a valid MongoDB ObjectId',
+        })
+      )
+      .optional(),
     users: z
       .array(
         z.string().refine(isMongoId, { message: 'Each user ID must be a valid MongoDB ObjectId' })
