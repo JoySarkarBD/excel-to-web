@@ -76,6 +76,10 @@ const updateSubscriptionPricing = async (
       'Duplicate detected: Another subscription-pricing with the same fieldName already exists.'
     );
   }
+  // ! If this subscription-pricing is already in userSubscription, prevent updating core fields (subscriptionPlanId, subscriptionDurationId) and allow only isActive field to be updated.
+
+  // TODO: * First, check if this subscription-pricing exists in any userSubscription taken by any user
+  // TODO: * If taken by any user, throw a thorough error: 'This subscription-pricing is already assigned to a user's subscription'
   // Proceed to update the subscription-pricing
   const updatedSubscriptionPricing = await SubscriptionPricing.findByIdAndUpdate(id, data, {
     new: true,
@@ -92,6 +96,8 @@ const updateSubscriptionPricing = async (
 const deleteSubscriptionPricing = async (
   id: IdOrIdsInput['id']
 ): Promise<Partial<ISubscriptionPricing | null>> => {
+  // TODO: * First, check if this subscription-pricing exists in any userSubscription taken by any user
+  // TODO: * If taken by any user, throw a thorough error: 'This subscription-pricing is already assigned to a user's subscription'
   const deletedSubscriptionPricing = await SubscriptionPricing.findByIdAndDelete(id);
   return deletedSubscriptionPricing;
 };
@@ -108,6 +114,8 @@ const deleteManySubscriptionPricing = async (
   const subscriptionPricingToDelete = await SubscriptionPricing.find({ _id: { $in: ids } });
   if (!subscriptionPricingToDelete.length)
     throw new Error('No subscription-pricing found to delete');
+  // TODO: * First, check if these subscription-pricing exist in any userSubscription taken by any user
+  // TODO: * If taken by any user, throw a thorough error: 'These subscription-pricing are already assigned to a user's subscription'
   await SubscriptionPricing.deleteMany({ _id: { $in: ids } });
   return subscriptionPricingToDelete;
 };
