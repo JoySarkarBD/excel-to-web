@@ -23,7 +23,7 @@ const createSubscriptionTrial = async (
     ...data,
     startDate: newDate,
     endDate: endDate,
-    status: SubscriptionStatus.TRIAL,
+    status: SubscriptionStatus.TRIAL, // Set status to TRIAL
   };
   // Check for existing active trial for the user and subscription
   const existingSubscriptionTrial = await UserSubscription.findOne({
