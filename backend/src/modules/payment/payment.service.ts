@@ -21,8 +21,6 @@ import { subscriptionPricingServices } from '../subscription-pricing/subscriptio
 import { getSubscriptionRemainingDays } from '../subscription-remain/subscription-remain.service';
 import { CreatePaymentInput } from './payment.validation';
 
-// Import the model
-
 export const stripe = new Stripe(config.STRIPE_SECRET_KEY as string, {
   apiVersion: '2026-01-28.clover',
 });
@@ -186,33 +184,14 @@ const stripePaymentWebHook = async (req: Request) => {
   try {
     event = stripe.webhooks.constructEvent(req.body, signature, endpointSecret);
     if (event.type === 'checkout.session.completed') {
-      const session = event.data.object as Stripe.Checkout.Session;
+      const stripeSession = event.data.object as Stripe.Checkout.Session;
 
-      if (!session.metadata) {
+      if (!stripeSession.metadata) {
         throw new Error('Session metadata is missing');
       }
 
-      // Generate user subscription document in the database based on the session metadata and other relevant information
-      const userSubscriptionData = await UserSubscription.create({
-        userId: new mongoose.Types.ObjectId(session.metadata.userId),
-        subscriptionPlanId: new mongoose.Types.ObjectId(
-          JSON.parse(session.metadata.planDetails).subscriptionPlanId
-        ),
-        subscriptionDurationId: new mongoose.Types.ObjectId(
-          JSON.parse(session.metadata.planDetails).subscriptionDurationId
-        ),
-        subscriptionPricingId: new mongoose.Types.ObjectId(
-          JSON.parse(session.metadata.planDetails).subscriptionPricingId
-        ),
-        status: SubscriptionStatus.ACTIVE,
-        startDate: new Date(),
-        endDate: new Date(
-          Date.now() +
-            JSON.parse(session.metadata.planDetails).subscriptionDuration * 24 * 60 * 60 * 1000
-        ),
-      });
+      const planDetails = JSON.parse(stripeSession.metadata.planDetails || '{}');
 
-      // Invoice number
       const generateInvoiceNumber = () => {
         const timestamp = Date.now().toString();
         const randomSuffix = Math.floor(Math.random() * 1000)
@@ -221,70 +200,115 @@ const stripePaymentWebHook = async (req: Request) => {
         return `INV-${timestamp}-${randomSuffix}`;
       };
 
-      // Generate subscription invoice document in the database based on the session metadata and other relevant information
-      const invoice = await SubscriptionInvoice.create({
-        userId: new mongoose.Types.ObjectId(session.metadata.userId),
-        userSubscriptionId: userSubscriptionData._id,
-        invoiceNumber: generateInvoiceNumber(),
-        amount: session.amount_total ? session.amount_total / 100 : undefined, // Convert amount from pence to pounds
-        status:
-          session.payment_status === 'paid'
-            ? SubscriptionInvoiceStatus.PAID
-            : SubscriptionInvoiceStatus.FAILED,
-        stripeInvoiceId: session.invoice ? session.invoice.toString() : undefined,
-        couponId: session.metadata.couponId
-          ? new mongoose.Types.ObjectId(session.metadata.couponId)
-          : undefined,
-      });
+      // Start a MongoDB transaction to ensure ACID for all related writes
+      const dbSession = await mongoose.startSession();
+      try {
+        dbSession.startTransaction();
 
-      // Generate Subscription history document in the database based on the session metadata and other relevant information
-      const subscriptionHistoryLog = await SubscriptionHistory.create({
-        userId: new mongoose.Types.ObjectId(session.metadata.userId),
-        subscriptionPlanId: new mongoose.Types.ObjectId(
-          JSON.parse(session.metadata.planDetails).subscriptionPlanId
-        ),
-        subscriptionDurationId: new mongoose.Types.ObjectId(
-          JSON.parse(session.metadata.planDetails).subscriptionDurationId
-        ),
-        startDate: new Date(),
-        endDate: new Date(
-          Date.now() +
-            JSON.parse(session.metadata.planDetails).subscriptionDuration * 24 * 60 * 60 * 1000
-        ),
-      });
+        const [userSubscriptionData] = await UserSubscription.create(
+          [
+            {
+              userId: new mongoose.Types.ObjectId(stripeSession.metadata.userId),
+              subscriptionPlanId: new mongoose.Types.ObjectId(planDetails.subscriptionPlanId),
+              subscriptionDurationId: new mongoose.Types.ObjectId(
+                planDetails.subscriptionDurationId
+              ),
+              subscriptionPricingId: new mongoose.Types.ObjectId(planDetails.subscriptionPricingId),
+              status: SubscriptionStatus.ACTIVE,
+              startDate: new Date(),
+              endDate: new Date(
+                Date.now() + planDetails.subscriptionDuration * 24 * 60 * 60 * 1000
+              ),
+            },
+          ],
+          { session: dbSession }
+        );
 
-      // Generate Subscription payment log document in the database based on the session metadata and other relevant information
-      const subscriptionPaymentLog = await SubscriptionPayment.create({
-        subscriptionInvoiceId: new mongoose.Types.ObjectId(invoice._id),
-        transactionId: session.payment_intent ? session.payment_intent.toString() : undefined,
-        paidAmount: session.amount_total ? session.amount_total / 100 : undefined, // Convert amount from pence to pounds
-        paymentStatus:
-          session.payment_status === 'paid'
-            ? SubscriptionInvoiceStatus.PAID
-            : SubscriptionInvoiceStatus.FAILED,
-        paidAt: new Date(),
-        paymentMethod: SubscriptionPaymentMethod.CARD,
-      });
+        const [invoice] = await SubscriptionInvoice.create(
+          [
+            {
+              userId: new mongoose.Types.ObjectId(stripeSession.metadata.userId),
+              userSubscriptionId: userSubscriptionData._id,
+              invoiceNumber: generateInvoiceNumber(),
+              amount: stripeSession.amount_total ? stripeSession.amount_total / 100 : undefined,
+              status:
+                stripeSession.payment_status === 'paid'
+                  ? SubscriptionInvoiceStatus.PAID
+                  : SubscriptionInvoiceStatus.FAILED,
+              stripeInvoiceId: stripeSession.invoice ? stripeSession.invoice.toString() : undefined,
+              couponId: stripeSession.metadata.couponId
+                ? new mongoose.Types.ObjectId(stripeSession.metadata.couponId)
+                : undefined,
+            },
+          ],
+          { session: dbSession }
+        );
 
-      // Updated the coupon document to add the user to the usedBy array if a coupon code is applied
-      if (session.metadata.couponId) {
-        await SubscriptionCoupon.findByIdAndUpdate(session.metadata.couponId, {
-          $addToSet: { usedBy: new mongoose.Types.ObjectId(session.metadata.userId) },
+        const [subscriptionHistoryLog] = await SubscriptionHistory.create(
+          [
+            {
+              userId: new mongoose.Types.ObjectId(stripeSession.metadata.userId),
+              subscriptionPlanId: new mongoose.Types.ObjectId(planDetails.subscriptionPlanId),
+              subscriptionDurationId: new mongoose.Types.ObjectId(
+                planDetails.subscriptionDurationId
+              ),
+              startDate: new Date(),
+              endDate: new Date(
+                Date.now() + planDetails.subscriptionDuration * 24 * 60 * 60 * 1000
+              ),
+            },
+          ],
+          { session: dbSession }
+        );
+
+        const [subscriptionPaymentLog] = await SubscriptionPayment.create(
+          [
+            {
+              subscriptionInvoiceId: new mongoose.Types.ObjectId(invoice._id),
+              transactionId: stripeSession.payment_intent
+                ? stripeSession.payment_intent.toString()
+                : undefined,
+              paidAmount: stripeSession.amount_total ? stripeSession.amount_total / 100 : undefined,
+              paymentStatus:
+                stripeSession.payment_status === 'paid'
+                  ? SubscriptionInvoiceStatus.PAID
+                  : SubscriptionInvoiceStatus.FAILED,
+              paidAt: new Date(),
+              paymentMethod: SubscriptionPaymentMethod.CARD,
+            },
+          ],
+          { session: dbSession }
+        );
+
+        if (stripeSession.metadata.couponId) {
+          await SubscriptionCoupon.findByIdAndUpdate(
+            stripeSession.metadata.couponId,
+            { $addToSet: { usedBy: new mongoose.Types.ObjectId(stripeSession.metadata.userId) } },
+            { session: dbSession }
+          );
+        }
+
+        // Commit transaction before sending external notifications
+        await dbSession.commitTransaction();
+        dbSession.endSession();
+
+        console.log('Payment successful for session:', stripeSession.id);
+        console.log('User subscription created:', userSubscriptionData);
+        console.log('Invoice log -', invoice);
+        console.log('Subscription history log -', subscriptionHistoryLog);
+        console.log('Subscription payment log -', subscriptionPaymentLog);
+
+        await SendEmail({
+          to: stripeSession.customer_email!,
+          subject: 'Subscription Purchase Confirmation',
+          text: `Thank you for your purchase! Your subscription to the ${planDetails.subscriptionPlanName} plan has been activated. Invoice Number: ${invoice.invoiceNumber}`,
+          html: `<p>Thank you for your purchase! Your subscription to the <strong>${planDetails.subscriptionPlanName}</strong> plan has been activated.</p><p>Invoice Number: <strong>${invoice.invoiceNumber}</strong></p>`,
         });
+      } catch (innerErr) {
+        await dbSession.abortTransaction();
+        dbSession.endSession();
+        throw innerErr;
       }
-
-      console.log('Payment successful for session:', session.id);
-      console.log('User subscription created:', userSubscriptionData);
-      console.log('Invoice log -', invoice);
-      console.log('Subscription history log -', subscriptionHistoryLog);
-      console.log('Subscription payment log -', subscriptionPaymentLog);
-
-      await SendEmail({
-        to: session.customer_email!,
-        subject: 'Subscription Purchase Confirmation',
-        text: `Thank you for your purchase! Your subscription to the ${JSON.parse(session.metadata.planDetails).subscriptionPlanName} plan has been activated. Invoice Number: ${invoice.invoiceNumber}`,
-        html: `<p>Thank you for your purchase! Your subscription to the <strong>${JSON.parse(session.metadata.planDetails).subscriptionPlanName}</strong> plan has been activated.</p><p>Invoice Number: <strong>${invoice.invoiceNumber}</strong></p>`,
-      });
     }
     if (event.type === 'payment_intent.succeeded') {
       const paymentIntent = event.data.object as Stripe.PaymentIntent;
