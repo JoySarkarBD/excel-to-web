@@ -4,14 +4,37 @@ import PlannerSchema, { IPlanner } from '../../models/vehicle-transport/planner.
 import { IdOrIdsInput, SearchQueryInput } from '../../handlers/common-zod-validator';
 import { CreatePlannerInput, UpdatePlannerInput } from './planner.validation';
 
+// Helper function to check if the user has access to the document based on ownership`
+const hasOwnerAccess = (doc: any, accessId?: string) => {
+  if (!accessId) return true;
+  const accessIdStr = String(accessId);
+  return (
+    doc?.standAloneId?.toString?.() === accessIdStr || doc?.createdBy?.toString?.() === accessIdStr
+  );
+};
+
 /**
- * Service function to create a new planner.
+ * Service function to create a new planner as Transport Manager
  *
- * @param {CreatePlannerInput} data - The data to create a new planner.
- * @returns {Promise<Partial<IPlanner>>} - The created planner.
+ * @param {CreatePlannerInput} data - The data to create a new planner as Transport Manager
+ * @returns {Promise<Partial<IPlanner>>} - The created planner
+ * @throws {Error} - Throws an error if the planner creation fails
  */
-const createPlanner = async (data: CreatePlannerInput): Promise<Partial<IPlanner>> => {
-  const newPlanner = new PlannerSchema(data);
+const createPlannerAsManager = async (data: CreatePlannerInput): Promise<Partial<IPlanner>> => {
+  const newPlanner = new PlannerSchema(data as any);
+  const savedPlanner = await newPlanner.save();
+  return savedPlanner;
+};
+
+/**
+ * Service function to create a new planner as Standalone User
+ *
+ * @param {CreatePlannerInput} data - The data to create a new planner as Standalone User
+ * @returns {Promise<Partial<IPlanner>>} - The created planner
+ * @throws {Error} - Throws an error if the planner creation fails
+ */
+const createPlannerAsStandAlone = async (data: CreatePlannerInput): Promise<Partial<IPlanner>> => {
+  const newPlanner = new PlannerSchema(data as any);
   const savedPlanner = await newPlanner.save();
   return savedPlanner;
 };
@@ -99,7 +122,8 @@ const getManyPlanner = async (
 };
 
 export const plannerServices = {
-  createPlanner,
+  createPlannerAsManager,
+  createPlannerAsStandAlone,
   updatePlanner,
   deletePlanner,
   getPlannerById,

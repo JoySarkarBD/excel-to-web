@@ -3,22 +3,49 @@ import { plannerServices } from './planner.service';
 import { SearchQueryInput } from '../../handlers/common-zod-validator';
 import ServerResponse from '../../helpers/responses/custom-response';
 import catchAsync from '../../utils/catch-async/catch-async';
+import { AuthenticatedRequest } from '../../middlewares/is-authorized';
+import mongoose from 'mongoose';
 
 /**
- * Controller function to handle the creation of a single planner.
+ *
+ * Controller function to handle the creation of a new planner as Transport Manager
+ * @param {Request} req - The request object containing planner data in the body.
+ * @param {Response} res - The response object used to send the response.
+ * @returns {Promise<Partial<IPlanner>>} - The created planner.
+ * @throws {Error} - Throws an error if the planner creation fails.
+ */
+export const createPlannerAsManager = catchAsync(
+  async (req: AuthenticatedRequest, res: Response) => {
+    const userId = req.user!._id;
+    req.body.createdBy = new mongoose.Types.ObjectId(userId);
+    req.body.standAloneId = new mongoose.Types.ObjectId(req.body.standAloneId);
+    // Call the service method to create a new planner as Transport Manager and get the result
+    const result = await plannerServices.createPlannerAsManager(req.body);
+    if (!result) throw new Error('Failed to create planner');
+    // Send a success response with the created planner data
+    ServerResponse(res, true, 201, 'Planner created successfully', result);
+  }
+);
+
+/**
+ * Controller function to handle the creation of a new planner as Standalone User
  *
  * @param {Request} req - The request object containing planner data in the body.
  * @param {Response} res - The response object used to send the response.
  * @returns {Promise<Partial<IPlanner>>} - The created planner.
  * @throws {Error} - Throws an error if the planner creation fails.
  */
-export const createPlanner = catchAsync(async (req: Request, res: Response) => {
-  // Call the service method to create a new planner and get the result
-  const result = await plannerServices.createPlanner(req.body);
-  if (!result) throw new Error('Failed to create planner');
-  // Send a success response with the created planner data
-  ServerResponse(res, true, 201, 'Planner created successfully', result);
-});
+export const createPlannerAsStandAlone = catchAsync(
+  async (req: AuthenticatedRequest, res: Response) => {
+    const userId = req.user!._id;
+    req.body.createdBy = new mongoose.Types.ObjectId(userId);
+    // Call the service method to create a new planner as Standalone User and get the result
+    const result = await plannerServices.createPlannerAsStandAlone(req.body);
+    if (!result) throw new Error('Failed to create planner');
+    // Send a success response with the created planner data
+    ServerResponse(res, true, 201, 'Planner created successfully', result);
+  }
+);
 
 /**
  * Controller function to handle the update operation for a single planner.
