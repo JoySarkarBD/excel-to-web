@@ -81,6 +81,7 @@ const zodUpdateSelfServiceSchema = z
 
 export type UpdateSelfServiceInput = z.infer<typeof zodUpdateSelfServiceSchema>;
 
+// for validating search query parameters when retrieving multiple self-services
 const zodSearchSelfServiceSchema = zodSearchQuerySchema.extend({
   standAloneId: z
     .string()
@@ -92,6 +93,7 @@ const zodSearchSelfServiceSchema = zodSearchQuerySchema.extend({
 
 export type SearchSelfServiceQueryInput = z.infer<typeof zodSearchSelfServiceSchema>;
 
+// for validating the :id param in routes like GET /self-service/:id, PUT /self-service/:id, DELETE /self-service/:id
 const zodSelfServiceIdParamSchema = z
   .object({
     id: z.string({ message: 'Self service id is required' }).refine(isMongoId, {
@@ -102,6 +104,7 @@ const zodSelfServiceIdParamSchema = z
 
 export type SelfServiceIdParamInput = z.infer<typeof zodSelfServiceIdParamSchema>;
 
+// for validating the :id and :standAloneId params in routes like GET /self-service/:id/:standAloneId, PUT /self-service/:id/:standAloneId, DELETE /self-service/:id/:standAloneId
 const zodSelfServiceAndManagerIdParamSchema = z
   .object({
     id: z.string({ message: 'Self service id is required' }).refine(isMongoId, {
@@ -116,10 +119,6 @@ const zodSelfServiceAndManagerIdParamSchema = z
 export type SelfServiceAndManagerIdParamInput = z.infer<
   typeof zodSelfServiceAndManagerIdParamSchema
 >;
-
-/**
- * Zod schema for validating search query parameters when retrieving multiple self-services.
- */
 
 /**
  * Named validators — use these directly in your Express routes

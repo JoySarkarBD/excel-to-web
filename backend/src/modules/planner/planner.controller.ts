@@ -5,6 +5,7 @@ import ServerResponse from '../../helpers/responses/custom-response';
 import catchAsync from '../../utils/catch-async/catch-async';
 import { AuthenticatedRequest } from '../../middlewares/is-authorized';
 import mongoose from 'mongoose';
+import { UserRole } from '../../models';
 
 /**
  *
@@ -106,9 +107,14 @@ export const getPlannerById = catchAsync(async (req: Request, res: Response) => 
  * @returns {Promise<Partial<IPlanner>[]>} - The retrieved planners.
  * @throws {Error} - Throws an error if the planners retrieval fails.
  */
-export const getManyPlanner = catchAsync(async (req: Request, res: Response) => {
+export const getManyPlanner = catchAsync(async (req: AuthenticatedRequest, res: Response) => {
   // Use the validated and transformed query from Zod middleware
-  const query = (req as any).validatedQuery as SearchQueryInput;
+  const query = { ...(req as any).validatedQuery } as SearchQueryInput & { standAloneId?: string };
+
+  if (req.user!.role === UserRole.STANDALONE_USER) {
+    query.standAloneId = String(req.user!._id);
+  }
+
   // Call the service method to get multiple planners based on query parameters and get the result
   const { planners, totalData, totalPages } = await plannerServices.getManyPlanner(query);
   if (!planners) throw new Error('Failed to retrieve planners');

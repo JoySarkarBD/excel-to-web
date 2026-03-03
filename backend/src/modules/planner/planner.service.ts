@@ -97,16 +97,38 @@ const getPlannerById = async (id: IdOrIdsInput['id']): Promise<Partial<IPlanner 
  * @returns {Promise<Partial<IPlanner>[]>} - The retrieved planner
  */
 const getManyPlanner = async (
-  query: SearchQueryInput
+  query: SearchQueryInput & { standAloneId?: string }
 ): Promise<{ planners: Partial<IPlanner>[]; totalData: number; totalPages: number }> => {
-  const { searchKey = '', showPerPage = 10, pageNo = 1 } = query;
+  const { searchKey = '', showPerPage = 10, pageNo = 1, standAloneId } = query;
   // Build the search filter based on the search key
-  const searchFilter = {
-    $or: [
-      // { fieldName: { $regex: searchKey, $options: 'i' } },
-      // Add more fields as needed
-    ],
-  };
+  const searchFilter = searchKey
+    ? {
+        $or: [
+          { serviceName: { $regex: searchKey, $options: 'i' } },
+          { description: { $regex: searchKey, $options: 'i' } },
+          { serviceLink: { $regex: searchKey, $options: 'i' } },
+        ],
+      }
+    : {};
+
+  const filter: any = { ...searchFilter };
+
+  if (standAloneId) {
+    const ownerFilter = {
+      $or: [
+        { standAloneId: new mongoose.Types.ObjectId(standAloneId) },
+        { createdBy: new mongoose.Types.ObjectId(standAloneId) },
+      ],
+    };
+
+    if (Object.keys(filter).length > 0) {
+      Object.assign(filter, { $and: [searchFilter, ownerFilter] });
+      delete filter.$or;
+    } else {
+      Object.assign(filter, ownerFilter);
+    }
+  }
+
   // Calculate the number of items to skip based on the page number
   const skipItems = (pageNo - 1) * showPerPage;
   // Find the total count of matching planner

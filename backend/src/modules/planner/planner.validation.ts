@@ -1,7 +1,7 @@
 import { isMongoId } from 'validator';
 import { z } from 'zod';
-import { validateBody } from '../../handlers/zod-error-handler';
-import { request } from 'express';
+import { validateBody, validateParams, validateQuery } from '../../handlers/zod-error-handler';
+import { zodSearchQuerySchema } from '../../handlers/common-zod-validator';
 
 /**
  * Planner Validation Schemas and Types
@@ -17,8 +17,6 @@ import { request } from 'express';
 
 /**
  * Zod schema for validating data when **creating** a single planner.
- *
- * → Add all **required** fields here
  */
 // base fields for creation
 const basePlannerFields = {
@@ -89,10 +87,48 @@ const zodUpdatePlannerSchema = z
 
 export type UpdatePlannerInput = z.infer<typeof zodUpdatePlannerSchema>;
 
+// for validating search query parameters when retrieving multiple planners
+const zodSearchPlannerSchema = zodSearchQuerySchema.extend({
+  standAloneId: z
+    .string()
+    .refine(isMongoId, { message: 'standAloneId must be a valid MongoDB ObjectId' })
+    .optional(),
+});
+
+export type SearchPlannerQueryInput = z.infer<typeof zodSearchPlannerSchema>;
+
+// for validating the :id param in routes like GET /planner/:id, PUT /planner/:id, DELETE /planner/:id
+const zodPlannerIdParamSchema = z
+  .object({
+    id: z.string({ message: 'Planner id is required' }).refine(isMongoId, {
+      message: 'Planner id must be a valid MongoDB ObjectId',
+    }),
+  })
+  .strict();
+
+export type PlannerIdParamInput = z.infer<typeof zodPlannerIdParamSchema>;
+
+// for validating the :id and :standAloneId params in routes like GET /planner/:id/:standAloneId, PUT /planner/:id/:standAloneId, DELETE /planner/:id/:standAloneId
+const zodPlannerAndManagerIdParamSchema = z
+  .object({
+    id: z.string({ message: 'Planner id is required' }).refine(isMongoId, {
+      message: 'Planner id must be a valid MongoDB ObjectId',
+    }),
+    standAloneId: z
+      .string({ message: 'standAloneId is required for transport manager' })
+      .refine(isMongoId, { message: 'standAloneId must be a valid MongoDB ObjectId' }),
+  })
+  .strict();
+
+export type PlannerAndManagerIdParamInput = z.infer<typeof zodPlannerAndManagerIdParamSchema>;
+
 /**
  * Named validators — use these directly in your Express routes
  */
 export const validateCreatePlannerAsManager = validateBody(zodCreatePlannerAsManagerSchema);
 export const validateCreatePlannerAsStandAlone = validateBody(zodCreatePlannerAsStandAloneSchema);
 export const validateUpdatePlanner = validateBody(zodUpdatePlannerSchema);
+export const validateSearchPlannerQueries = validateQuery(zodSearchPlannerSchema);
+export const validateIdParam = validateParams(zodPlannerIdParamSchema);
+export const validateIdAndManagerParam = validateParams(zodPlannerAndManagerIdParamSchema);
 

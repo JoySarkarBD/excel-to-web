@@ -1,5 +1,5 @@
 // Import Router from express
-import { Router } from 'express';
+import { NextFunction, Router, Response } from 'express';
 
 // Import controller from corresponding module
 import {
@@ -15,13 +15,17 @@ import {
 import {
   validateCreatePlannerAsManager,
   validateCreatePlannerAsStandAlone,
+  validateIdParam,
+  validateIdAndManagerParam,
   validateUpdatePlanner,
 } from './planner.validation';
 import { validateId, validateSearchQueries } from '../../handlers/common-zod-validator';
-import isAuthorized from '../../middlewares/is-authorized';
+import { validateSearchPlannerQueries } from './planner.validation';
+import isAuthorized, { AuthenticatedRequest } from '../../middlewares/is-authorized';
 import authorizedRoles from '../../middlewares/authorized-roles';
 import { UserRole } from '../../models';
 import { validateClientForManagerMiddleware } from '../../middlewares/validate-client-for-manager';
+import ServerResponse from '../../helpers/responses/custom-response';
 
 // Initialize router
 const router = Router();
@@ -88,17 +92,64 @@ router.delete('/delete-planner/:id', validateId, deletePlanner);
  * @param {function} validation - ['validateSearchQueries']
  * @param {function} controller - ['getManyPlanner']
  */
-router.get('/get-planner/many', validateSearchQueries, getManyPlanner);
+router.get(
+  '/get-planner/many',
+  authorizedRoles([UserRole.STANDALONE_USER, UserRole.TRANSPORT_MANAGER]),
+  (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    if (req.user!.role === UserRole.STANDALONE_USER && req.query?.standAloneId) {
+      return ServerResponse(res, false, 400, 'standAloneId is not needed for standalone users');
+    }
+    if (req.user!.role === UserRole.TRANSPORT_MANAGER) {
+      if (!req.query?.standAloneId) {
+        return ServerResponse(res, false, 400, 'standAloneId is required for transport managers');
+      }
+      return validateClientForManagerMiddleware(req, res, next);
+    }
+    next();
+  },
+  (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    if (req.user!.role === UserRole.TRANSPORT_MANAGER) {
+      return validateSearchPlannerQueries(req, res, next);
+    }
+    return validateSearchQueries(req, res, next);
+  },
+  getManyPlanner
+);
 
 /**
- * @route GET /api/v1/planner/get-planner/:id
- * @description Get a planner by ID
+ * Get a planner by ID as Transport Manager
+ *
+ * @route GET /api/v1/planner/get-planner/:id/:standAloneId
+ * @description Get a planner by ID as Transport Manager
  * @access Private
  * @param {IdOrIdsInput['id']} id - The ID of the planner to retrieve
  * @param {function} validation - ['validateId']
  * @param {function} controller - ['getPlannerById']
  */
-router.get('/get-planner/:id', validateId, getPlannerById);
+router.get(
+  '/get-planner/:id/:standAloneId',
+  authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  validateClientForManagerMiddleware,
+  validateIdAndManagerParam,
+  getPlannerById
+);
+
+/**
+ * Get a planner by ID as Standalone User
+ *
+ * @route GET /api/v1/planner/get-planner/:id
+ * @description Get a planner by ID as Standalone User
+ * @access Private
+ * @param {IdOrIdsInput['id']} id - The ID of the planner to retrieve
+ * @param {function} validation - ['validateId']
+ * @param {function} controller - ['getPlannerById']
+ */
+router.get(
+  '/get-planner/:id',
+  authorizedRoles([UserRole.STANDALONE_USER]),
+  validateIdParam,
+  getPlannerById
+);
 
 // Export the router
 module.exports = router;
