@@ -83,6 +83,14 @@ export default function SignInPage() {
       const resp = await AuthAction.LoginUser(payload);
       
       if (resp.status) {
+        const token = resp.data?.token;
+        if (token) {
+          const secure = window.location.protocol === "https:" ? "; secure" : "";
+          document.cookie = `token=${encodeURIComponent(
+            token,
+          )}; path=/; max-age=604800; samesite=lax${secure}`;
+        }
+
         toast.success(resp.message || "Successfully signed in!");
         // Redirect to dashboard or home page
         setTimeout(() => {

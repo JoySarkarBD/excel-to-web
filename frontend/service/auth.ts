@@ -14,13 +14,18 @@ export interface ILogin {
   password:string
 }
 
+export interface ILoginResponseData {
+  token: string;
+  [key: string]: unknown;
+}
+
 export interface IApiResponse<T = unknown> {
   success?: boolean;
   status: boolean;
   statusCode: number;
   message: string;
   data?: T;
-  error?: string;
+  error?: string | Record<string, string>;
   errors?:string
 }
 
@@ -49,16 +54,21 @@ const RegisterUser = async (data: IRegister): Promise<IApiResponse> => {
     return response.data;
   } catch (error: unknown) {
     if (axios.isAxiosError<IApiResponse>(error)) {
-      throw new Error(error.response?.data?.error || "Something went wrong");
+      const apiError = error.response?.data?.error;
+      throw new Error(
+        typeof apiError === "string" ? apiError : "Something went wrong",
+      );
     }
     throw new Error("Something went wrong");
   }
 };
 
 
-const LoginUser = async(data:ILogin) => {
+const LoginUser = async(
+  data: ILogin,
+): Promise<IApiResponse<ILoginResponseData>> => {
   try {
-  const response = await axios.post<IApiResponse>(
+  const response = await axios.post<IApiResponse<ILoginResponseData>>(
       `${base_url}/auth/login`,
       data,
     );
@@ -67,7 +77,10 @@ const LoginUser = async(data:ILogin) => {
     
   } catch (error) {
       if (axios.isAxiosError<IApiResponse>(error)) {
-      throw new Error(error.response?.data?.error || "Something went wrong");
+      const apiError = error.response?.data?.error;
+      throw new Error(
+        typeof apiError === "string" ? apiError : "Something went wrong",
+      );
     }
     throw new Error("Something went wrong");
   }
@@ -84,7 +97,10 @@ const VerifyEmail = async(data:IVerifyEamil)=>{
     return response.data;
   } catch (error: unknown) {
     if (axios.isAxiosError<IApiResponse>(error)) {
-      throw new Error(error.response?.data?.error || "Something went wrong");
+      const apiError = error.response?.data?.error;
+      throw new Error(
+        typeof apiError === "string" ? apiError : "Something went wrong",
+      );
     }
     throw new Error("Something went wrong");
   }
@@ -99,7 +115,10 @@ const ResendVerificationEmail = async(data:IResendEmail)=>{
     return response.data;
   } catch (error: unknown) {
     if (axios.isAxiosError<IApiResponse>(error)) {
-      throw new Error(error.response?.data?.error || "Something went wrong");
+      const apiError = error.response?.data?.error;
+      throw new Error(
+        typeof apiError === "string" ? apiError : "Something went wrong",
+      );
     }
     throw new Error("Something went wrong");
   }
@@ -114,7 +133,10 @@ const ForgotPassword = async(data:IResendEmail)=>{
     return response.data;
   } catch (error: unknown) {
     if (axios.isAxiosError<IApiResponse>(error)) {
-      throw new Error(error.response?.data?.error || "Something went wrong");
+      const apiError = error.response?.data?.error;
+      throw new Error(
+        typeof apiError === "string" ? apiError : "Something went wrong",
+      );
     }
     throw new Error("Something went wrong");
   }
@@ -129,7 +151,10 @@ const ResetForgetPassword = async(data:IResetForgetPassword)=>{
     return response.data;
   } catch (error: unknown) {
     if (axios.isAxiosError<IApiResponse>(error)) {
-      throw new Error(error.response?.data?.error || "Something went wrong");
+      const apiError = error.response?.data?.error;
+      throw new Error(
+        typeof apiError === "string" ? apiError : "Something went wrong",
+      );
     }
     throw new Error("Something went wrong");
   }
