@@ -1,5 +1,7 @@
+"use client";
 import { base_url } from "@/lib/utils";
 import axios from "axios";
+
 export interface IRegister {
   fullName: string;
   email: string;
@@ -7,35 +9,55 @@ export interface IRegister {
   password: string;
   role: string;
 }
+export interface ILogin {
+  email:string,
+  password:string
+}
 
-const RegisterUser = async (data: IRegister) => {
-  console.log("hit");
+export interface IApiResponse<T = unknown> {
+  success?: boolean;
+  status: boolean;
+  statusCode: number;
+  message: string;
+  data?: T;
+  error?: string;
+}
+
+const RegisterUser = async (data: IRegister): Promise<IApiResponse> => {
   try {
-    const response = await axios.post(`${base_url}/auth/register`, data);
-    console.log(response, "Register success");
-
-    if (response.data.status === 201) {
-      window.location.href = "/signin";
+    const response = await axios.post<IApiResponse>(
+      `${base_url}/auth/register`,
+      data,
+    );
+    return response.data;
+  } catch (error: unknown) {
+    if (axios.isAxiosError<IApiResponse>(error)) {
+      throw new Error(error.response?.data?.error || "Something went wrong");
     }
-    return response;
-  } catch (error: any) {
-    // AxiosError handle korar proper way
-    if (axios.isAxiosError(error)) {
-      console.log("Status:", error.response?.status);
-      console.log("Data:", error.response?.data);
-      console.log("Headers:", error.response?.headers);
-    } else {
-      console.log(error, "Unknown error");
-    }
-
-    // Optional: user friendly message
-    return {
-      status: "error",
-      message: error.response?.data?.error || "Something went wrong",
-    };
+    throw new Error("Something went wrong");
   }
 };
 
+
+const LoginUser = async(data:ILogin) => {
+  try {
+  const response = await axios.post<IApiResponse>(
+      `${base_url}/auth/login`,
+      data,
+    );
+
+  return response.data
+    
+  } catch (error) {
+      if (axios.isAxiosError<IApiResponse>(error)) {
+      throw new Error(error.response?.data?.error || "Something went wrong");
+    }
+    throw new Error("Something went wrong");
+  }
+
+}
+
 export const AuthAction = {
   RegisterUser,
+  LoginUser
 };
