@@ -26,6 +26,9 @@ import {
 
 const router = Router();
 
+// All routes in this router require authentication
+router.use(isAuthorized());
+
 /**
  * @route   POST /api/v1/pg9AndPg13Plan/create-pg9-and-pg13-plan
  * @desc    Create a PG9 & PG13 plan (Transport Manager)
@@ -33,7 +36,6 @@ const router = Router();
  */
 router.post(
   '/create-pg9-and-pg13-plan',
-  isAuthorized,
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
   validateCreatePg9AndPg13PlanAsManager,
   validateClientForManagerMiddleware,
@@ -47,7 +49,6 @@ router.post(
  */
 router.post(
   '/create-stand-alone-pg9-and-pg13-plan',
-  isAuthorized,
   authorizedRoles([UserRole.STANDALONE_USER]),
   validateCreatePg9AndPg13PlanAsStandAlone,
   createPg9AndPg13PlanAsStandAlone
@@ -64,7 +65,6 @@ router.post(
  */
 router.get(
   '/get-pg9-and-pg13-plans',
-  isAuthorized,
   authorizedRoles([UserRole.TRANSPORT_MANAGER, UserRole.STANDALONE_USER]),
   validateSearchPg9AndPg13PlansQueries,
   (req: Request, _res: Response, next: NextFunction) => {
@@ -88,7 +88,6 @@ router.get(
  */
 router.get(
   '/get-pg9-and-pg13-plan/:pg9AndPg13PlanId/:standAloneId',
-  isAuthorized,
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
   validatePg9AndPg13PlanAndManagerIdParam,
   validateClientForManagerMiddleware,
@@ -102,7 +101,6 @@ router.get(
  */
 router.get(
   '/get-pg9-and-pg13-plan/:pg9AndPg13PlanId',
-  isAuthorized,
   authorizedRoles([UserRole.STANDALONE_USER]),
   validatePg9AndPg13PlanIdParam,
   getPg9AndPg13PlanByIdAsStandAlone
@@ -119,7 +117,6 @@ router.get(
  */
 router.patch(
   '/update-pg9-and-pg13-plan-by-manager/:pg9AndPg13PlanId/:standAloneId',
-  isAuthorized,
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
   validatePg9AndPg13PlanAndManagerIdParam,
   validateUpdatePg9AndPg13Plan,
@@ -134,7 +131,6 @@ router.patch(
  */
 router.patch(
   '/update-pg9-and-pg13-plan/:pg9AndPg13PlanId',
-  isAuthorized,
   authorizedRoles([UserRole.STANDALONE_USER]),
   validatePg9AndPg13PlanIdParam,
   validateUpdatePg9AndPg13Plan,
@@ -152,7 +148,6 @@ router.patch(
  */
 router.delete(
   '/delete-pg9-and-pg13-plan-by-manager/:pg9AndPg13PlanId/:standAloneId',
-  isAuthorized,
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
   validatePg9AndPg13PlanAndManagerIdParam,
   validateClientForManagerMiddleware,
@@ -166,7 +161,6 @@ router.delete(
  */
 router.delete(
   '/delete-pg9-and-pg13-plan/:pg9AndPg13PlanId',
-  isAuthorized,
   authorizedRoles([UserRole.STANDALONE_USER]),
   validatePg9AndPg13PlanIdParam,
   deletePg9AndPg13PlanAsStandAlone
