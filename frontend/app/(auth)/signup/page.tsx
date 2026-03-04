@@ -115,8 +115,11 @@ export default function SignUpPage() {
     try {
       const resp = await AuthAction.RegisterUser(formData);
       if (resp.status) {
-        toast.success(resp.message || "User created successfully");
-        router.push("/signin");
+toast.success(
+  (resp.message ? resp.message + " " : "") +
+  "Please check your email and verify your account."
+);
+        // router.push("/signin");
         return;
       }
       toast.error(resp.message || "Registration failed");
@@ -139,7 +142,7 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 p-4 dark:from-gray-900 dark:to-gray-800">
+    <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-gray-50 to-gray-100 p-4 dark:from-gray-900 dark:to-gray-800">
       <Toaster />
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="space-y-1">
