@@ -21,6 +21,7 @@ export interface IApiResponse<T = unknown> {
   message: string;
   data?: T;
   error?: string;
+  errors?:string
 }
 
 export interface IVerifyEamil {
@@ -29,6 +30,14 @@ export interface IVerifyEamil {
 }
 export interface IResendEmail {
   email:string
+}
+
+
+export interface  IResetForgetPassword {
+  email:string;
+  token:string;
+  password:string;
+  confirmPassword:string
 }
 
 const RegisterUser = async (data: IRegister): Promise<IApiResponse> => {
@@ -111,7 +120,7 @@ const ForgotPassword = async(data:IResendEmail)=>{
   }
 
 }
-const ResetForgetPassword = async(data:IResendEmail)=>{
+const ResetForgetPassword = async(data:IResetForgetPassword)=>{
       try {
     const response = await axios.post<IApiResponse>(
       `${base_url}/auth/reset-password`,

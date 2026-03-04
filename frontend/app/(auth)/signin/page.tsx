@@ -14,7 +14,9 @@ import { Separator } from "@/components/ui/separator";
 import { AuthAction } from "@/service/auth";
 import { Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast, Toaster } from "sonner";
 
 export default function SignInPage() {
   /**
@@ -42,6 +44,9 @@ export default function SignInPage() {
   const [errors, setErrors] = useState<{ email?: string; password?: string }>(
     {},
   );
+
+
+  const router = useRouter();
 
   // Validate form inputs
   function validateForm() {
@@ -73,20 +78,36 @@ export default function SignInPage() {
 
     setIsLoading(true);
 
-    // Simulate API call
     try {
-      console.log("Signing in with:", { email, password });
-      // Replace with actual API call
-      // const response = await signIn({ email, password });
-      const payload = {email, password};
+      const payload = { email, password };
       const resp = await AuthAction.LoginUser(payload);
-      console.log(resp, 'login resp');
-
-      alert(`Successfully signed in as ${email}`);
-      // In a real app: router.push("/dashboard");
+      
+      if (resp.status) {
+        toast.success(resp.message || "Successfully signed in!");
+        // Redirect to dashboard or home page
+        setTimeout(() => {
+          router.push("/dashboard"); // or wherever you want to redirect
+        }, 1000);
+      } else {
+        // Show error message from API
+        toast.error(resp.message || "Sign in failed. Please check your credentials.");
+        
+        // Set field-specific errors if provided by API
+        if (resp.error) {
+          if (typeof resp.error === "string") {
+            setErrors({ password: resp.error });
+          } else {
+            setErrors(resp.error);
+          }
+        } else {
+          // General error - clear password field
+          setPassword("");
+        }
+      }
     } catch (error) {
       console.error("Sign in failed:", error);
-      alert("Sign in failed. Please check your credentials.");
+      const errorMessage = error instanceof Error ? error.message : "Something went wrong";
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -94,6 +115,7 @@ export default function SignInPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-gray-50 to-gray-100 p-4 dark:from-gray-900 dark:to-gray-800">
+      <Toaster/>
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="space-y-1">
           <CardTitle className="text-center text-2xl font-bold">
