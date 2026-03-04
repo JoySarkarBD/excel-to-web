@@ -31,10 +31,12 @@ import {
   UserCircle,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast, Toaster } from "sonner";
 
 export default function SignUpPage() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -110,17 +112,20 @@ export default function SignUpPage() {
     }
 
     setIsLoading(true);
-    const resp = await AuthAction.RegisterUser(formData);
-    console.log(resp, "resp is here");
-    if (resp?.status === 201) {
-      toast.success("User Create Successfully");
+    try {
+      const resp = await AuthAction.RegisterUser(formData);
+      if (resp.status) {
+        toast.success(resp.message || "User created successfully");
+        router.push("/signin");
+        return;
+      }
+      toast.error(resp.message || "Registration failed");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Something went wrong";
+      toast.error(message);
+    } finally {
       setIsLoading(false);
-    }
-    if (resp.status === "error") {
-      console.log(resp.message);
-      toast.error(resp.message);
-      setIsLoading(false);
-      return;
     }
   };
 
