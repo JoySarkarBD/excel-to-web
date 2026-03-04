@@ -14,9 +14,9 @@ import hpp from 'hpp';
 import mongoose from 'mongoose';
 import morgan from 'morgan';
 import PathNotFound from './helpers/responses/path-not-found';
+import { startCronJob } from './utils/cron-job/cron-job';
 import { loggerStream } from './utils/logger/logger';
 import { connectRedis } from './utils/redis/redis-client';
-import { startCronJob } from './utils/cron-job/cron-job';
 
 // Terminal colors
 const GREEN = '\x1b[32m';
@@ -191,5 +191,7 @@ app.listen(config.PORT, async () => {
     `Port: ${YELLOW}${config.PORT}${RESET}\n`
   );
   console.log(`Server is running at ${config.BASE_URL}:${config.PORT} in ${config.NODE_ENV} mode.`);
+  // Log total route count
+  console.log(`${YELLOW}Total routes loaded: ${routes.length}${RESET}`);
   logRoutesByModule();
 });
