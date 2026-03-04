@@ -3,24 +3,24 @@ import { Router } from 'express';
 import {
   createPolicyProcedureAsManager,
   createPolicyProcedureAsStandAlone,
+  deletePolicyProcedure,
   getAllPolicyProcedures,
   getPolicyProcedureById,
   updatePolicyProcedure,
-  deletePolicyProcedure,
 } from './policy-procedure.controller';
 
+import { validateSearchQueries } from '../../handlers/common-zod-validator';
 import {
-  validatePolicyProcedureIdParam,
-  validatePolicyProcedureAndManagerIdParam,
   validateCreatePolicyProcedureAsManager,
   validateCreatePolicyProcedureAsStandAlone,
-  validateUpdatePolicyProcedure,
+  validatePolicyProcedureAndManagerIdParam,
+  validatePolicyProcedureIdParam,
   validateSearchPolicyProceduresQueries,
+  validateUpdatePolicyProcedure,
 } from './policy-procedure.validation';
-import { validateSearchQueries } from '../../handlers/common-zod-validator';
 
-import isAuthorized, { AuthenticatedRequest } from '../../middlewares/is-authorized';
 import authorizedRoles from '../../middlewares/authorized-roles';
+import isAuthorized, { AuthenticatedRequest } from '../../middlewares/is-authorized';
 import { validateClientForManagerMiddleware } from '../../middlewares/validate-client-for-manager';
 import { UserRole } from '../../models';
 
@@ -39,6 +39,7 @@ router.use(isAuthorized());
 router.post(
   '/create-policy-procedure',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateClientForManagerMiddleware,
   validateCreatePolicyProcedureAsManager,
   createPolicyProcedureAsManager
@@ -52,6 +53,7 @@ router.post(
 router.post(
   '/create-stand-alone-policy-procedure',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateCreatePolicyProcedureAsStandAlone,
   createPolicyProcedureAsStandAlone
 );
@@ -68,6 +70,7 @@ router.post(
 router.patch(
   '/update-policy-procedure-by-manager/:policyProcedureId/:standAloneId',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateClientForManagerMiddleware,
   validatePolicyProcedureAndManagerIdParam,
   validateUpdatePolicyProcedure,
@@ -82,6 +85,7 @@ router.patch(
 router.patch(
   '/update-policy-procedure/:policyProcedureId',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validatePolicyProcedureIdParam,
   validateUpdatePolicyProcedure,
   updatePolicyProcedure
@@ -99,6 +103,7 @@ router.patch(
 router.delete(
   '/delete-policy-procedure-by-manager/:policyProcedureId/:standAloneId',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateClientForManagerMiddleware,
   validatePolicyProcedureAndManagerIdParam,
   deletePolicyProcedure
@@ -112,6 +117,7 @@ router.delete(
 router.delete(
   '/delete-policy-procedure/:policyProcedureId',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validatePolicyProcedureIdParam,
   deletePolicyProcedure
 );

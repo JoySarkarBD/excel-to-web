@@ -13,11 +13,11 @@ import {
 
 //Import validation from corresponding module
 import { validateId, validateSearchQueries } from '../../handlers/common-zod-validator';
+import ServerResponse from '../../helpers/responses/custom-response';
 import authorizedRoles from '../../middlewares/authorized-roles';
 import isAuthorized, { AuthenticatedRequest } from '../../middlewares/is-authorized';
 import { validateClientForManagerMiddleware } from '../../middlewares/validate-client-for-manager';
 import { UserRole } from '../../models';
-import ServerResponse from '../../helpers/responses/custom-response';
 import {
   validateCreateVehicleAsStandAlone,
   validateCreateVehicleAsTransportManager,
@@ -27,8 +27,6 @@ import {
   validateUpdateVehicle,
   validateUpdateVehicleIds,
 } from './vehicle.validation';
-
-// TODO: have to check subscription middleware in create update & delete routes
 
 // Initialize router
 const router = Router();

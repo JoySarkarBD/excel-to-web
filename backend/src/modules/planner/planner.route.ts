@@ -1,39 +1,39 @@
 // Import Router from express
-import { NextFunction, Router, Response } from 'express';
+import { NextFunction, Response, Router } from 'express';
 
 // Import controller from corresponding module
 import {
-  updatePlanner,
-  deletePlanner,
-  getPlannerById,
-  getManyPlanner,
+  approvalForPlannerChangesRequest,
   createPlannerAsManager,
   createPlannerAsStandAlone,
-  requestChangePlannerDate,
-  updatePlannerAsStandAlone,
+  deletePlanner,
   getAllRequestedPlanners,
-  approvalForPlannerChangesRequest,
+  getManyPlanner,
+  getPlannerById,
   rejectPlannerChangeRequest,
+  requestChangePlannerDate,
+  updatePlanner,
+  updatePlannerAsStandAlone,
 } from './planner.controller';
 
 //Import validation from corresponding module
+import { validateSearchQueries } from '../../handlers/common-zod-validator';
+import ServerResponse from '../../helpers/responses/custom-response';
+import authorizedRoles from '../../middlewares/authorized-roles';
+import isAuthorized, { AuthenticatedRequest } from '../../middlewares/is-authorized';
+import { validateClientForManagerMiddleware } from '../../middlewares/validate-client-for-manager';
+import { UserRole } from '../../models';
 import {
   validateCreatePlannerAsManager,
   validateCreatePlannerAsStandAlone,
-  validateIdParam,
   validateIdAndManagerParam,
-  validationRequestChangePlannerDate,
+  validateIdParam,
+  validateRequestChangePlannerPrams,
+  validateSearchPlannerQueries,
   validateUpdatePlannerAsManager,
   validateUpdatePlannerAsStandAlone,
-  validateRequestChangePlannerPrams,
+  validationRequestChangePlannerDate,
 } from './planner.validation';
-import { validateId, validateSearchQueries } from '../../handlers/common-zod-validator';
-import { validateSearchPlannerQueries } from './planner.validation';
-import isAuthorized, { AuthenticatedRequest } from '../../middlewares/is-authorized';
-import authorizedRoles from '../../middlewares/authorized-roles';
-import { UserRole } from '../../models';
-import { validateClientForManagerMiddleware } from '../../middlewares/validate-client-for-manager';
-import ServerResponse from '../../helpers/responses/custom-response';
 
 // Initialize router
 const router = Router();
@@ -52,6 +52,7 @@ router.use(isAuthorized());
 router.post(
   '/create-planner',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateCreatePlannerAsManager,
   validateClientForManagerMiddleware,
   createPlannerAsManager
@@ -69,6 +70,7 @@ router.post(
 router.post(
   '/create-planner-standalone',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateCreatePlannerAsStandAlone,
   createPlannerAsStandAlone
 );
@@ -86,6 +88,7 @@ router.post(
 router.post(
   '/request-change-planner-date/:id',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateIdParam,
   validationRequestChangePlannerDate,
   requestChangePlannerDate
@@ -104,6 +107,7 @@ router.post(
 router.patch(
   '/update-planner/:id/:standAloneId',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateClientForManagerMiddleware,
   validateIdAndManagerParam,
   validateUpdatePlannerAsManager,
@@ -123,6 +127,7 @@ router.patch(
 router.patch(
   '/update-planner/:id',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateIdParam,
   validateUpdatePlannerAsStandAlone,
   updatePlannerAsStandAlone
@@ -141,6 +146,7 @@ router.patch(
 router.patch(
   '/request-approval/:id',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateIdParam,
   approvalForPlannerChangesRequest
 );
@@ -158,6 +164,7 @@ router.patch(
 router.patch(
   '/request-reject/:id',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateIdParam,
   rejectPlannerChangeRequest
 );
@@ -175,6 +182,7 @@ router.patch(
 router.delete(
   '/delete-planner/:id/:standAloneId',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateClientForManagerMiddleware,
   validateIdAndManagerParam,
   deletePlanner
@@ -193,6 +201,7 @@ router.delete(
 router.delete(
   '/delete-planner/:id',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateIdParam,
   deletePlanner
 );
@@ -283,4 +292,3 @@ router.get(
 
 // Export the router
 module.exports = router;
-

@@ -27,9 +27,8 @@ const router = Router();
  */
 router.post(
   '',
-  // TODO: need to remove the super admin role from this route after testing
   isAuthorized(),
-  authorizedRoles([UserRole.SUPER_ADMIN, UserRole.TRANSPORT_MANAGER, UserRole.STANDALONE_USER]),
+  authorizedRoles([UserRole.TRANSPORT_MANAGER, UserRole.STANDALONE_USER]),
   validateCreatePayment,
   createPayment
 );

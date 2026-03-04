@@ -1,20 +1,17 @@
 import { Router } from 'express';
 
-import {
-  getTrainingRecords,
-  updateRecordStatus,
-} from './training-records.controller';
+import { getTrainingRecords, updateRecordStatus } from './training-records.controller';
 
 import {
-  validateRecordIdParam,
   validateRecordAndManagerIdParam,
-  validateUpdateRecordStatus,
+  validateRecordIdParam,
   validateSearchRecordsQueries,
   validateSearchRecordsStandaloneQueries,
+  validateUpdateRecordStatus,
 } from './training-records.validation';
 
-import isAuthorized, { AuthenticatedRequest } from '../../middlewares/is-authorized';
 import authorizedRoles from '../../middlewares/authorized-roles';
+import isAuthorized, { AuthenticatedRequest } from '../../middlewares/is-authorized';
 import { validateClientForManagerMiddleware } from '../../middlewares/validate-client-for-manager';
 import { UserRole } from '../../models';
 
@@ -33,6 +30,7 @@ router.use(isAuthorized());
 router.patch(
   '/update-record-status-by-manager/:registerId/:standAloneId',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateClientForManagerMiddleware,
   validateRecordAndManagerIdParam,
   validateUpdateRecordStatus,
@@ -47,6 +45,7 @@ router.patch(
 router.patch(
   '/update-record-status/:registerId',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateRecordIdParam,
   validateUpdateRecordStatus,
   updateRecordStatus

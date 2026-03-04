@@ -1,17 +1,23 @@
 // Import Router from express
-import { Router, Response, NextFunction } from 'express';
+import { NextFunction, Response, Router } from 'express';
 
 // Import controller from corresponding module
 import {
-  updateTrafficCommissionerCommunication,
-  deleteTrafficCommissionerCommunication,
-  getTrafficCommissionerCommunicationById,
-  getManyTrafficCommissionerCommunication,
   createCommunicationAsStandAlone,
   createCommunicationAsTransportManager,
+  deleteTrafficCommissionerCommunication,
+  getManyTrafficCommissionerCommunication,
+  getTrafficCommissionerCommunicationById,
+  updateTrafficCommissionerCommunication,
 } from './traffic-commissioner-communication.controller';
 
 //Import validation from corresponding module
+import { validateSearchQueries } from '../../handlers/common-zod-validator';
+import ServerResponse from '../../helpers/responses/custom-response';
+import authorizedRoles from '../../middlewares/authorized-roles';
+import isAuthorized, { AuthenticatedRequest } from '../../middlewares/is-authorized';
+import { validateClientForManagerMiddleware } from '../../middlewares/validate-client-for-manager';
+import { UserRole } from '../../models';
 import {
   validateCreateTrafficCommissionerCommunicationAsStandAlone,
   validateCreateTrafficCommissionerCommunicationAsTransportManager,
@@ -20,14 +26,6 @@ import {
   validateTrafficCommissionerCommunicationIdParam,
   validateUpdateTrafficCommissionerCommunication,
 } from './traffic-commissioner-communication.validation';
-import { validateSearchQueries } from '../../handlers/common-zod-validator';
-import authorizedRoles from '../../middlewares/authorized-roles';
-import isAuthorized, { AuthenticatedRequest } from '../../middlewares/is-authorized';
-import { validateClientForManagerMiddleware } from '../../middlewares/validate-client-for-manager';
-import { UserRole } from '../../models';
-import ServerResponse from '../../helpers/responses/custom-response';
-
-// TODO: have to check subscription middleware in create update & delete routes
 
 // Initialize router
 const router = Router();
@@ -44,6 +42,7 @@ router.use(isAuthorized());
 router.post(
   '/create-traffic-commissioner-communication',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateCreateTrafficCommissionerCommunicationAsTransportManager,
   validateClientForManagerMiddleware,
   createCommunicationAsTransportManager
@@ -59,6 +58,7 @@ router.post(
 router.post(
   '/create-stand-alone-traffic-commissioner-communication',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateCreateTrafficCommissionerCommunicationAsStandAlone,
   createCommunicationAsStandAlone
 );
@@ -66,6 +66,7 @@ router.post(
 router.post(
   '/create-traffic-commissioner-communication-standalone',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateCreateTrafficCommissionerCommunicationAsStandAlone,
   createCommunicationAsStandAlone
 );
@@ -81,6 +82,7 @@ router.post(
 router.patch(
   '/update-traffic-commissioner-communication/:id/:standAloneId',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateClientForManagerMiddleware,
   validateTrafficCommissionerCommunicationAndManagerIdParam,
   validateUpdateTrafficCommissionerCommunication,
@@ -98,6 +100,7 @@ router.patch(
 router.patch(
   '/update-traffic-commissioner-communication/:id',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateTrafficCommissionerCommunicationIdParam,
   validateUpdateTrafficCommissionerCommunication,
   updateTrafficCommissionerCommunication
@@ -114,6 +117,7 @@ router.patch(
 router.delete(
   '/delete-traffic-commissioner-communication/:id/:standAloneId',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateClientForManagerMiddleware,
   validateTrafficCommissionerCommunicationAndManagerIdParam,
   deleteTrafficCommissionerCommunication
@@ -130,6 +134,7 @@ router.delete(
 router.delete(
   '/delete-traffic-commissioner-communication/:id',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateTrafficCommissionerCommunicationIdParam,
   deleteTrafficCommissionerCommunication
 );
@@ -200,4 +205,3 @@ router.get(
 
 // Export the router
 module.exports = router;
-

@@ -37,6 +37,7 @@ router.use(isAuthorized());
 router.post(
   '/create-pg9-and-pg13-plan',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateCreatePg9AndPg13PlanAsManager,
   validateClientForManagerMiddleware,
   createPg9AndPg13PlanAsManager
@@ -50,6 +51,7 @@ router.post(
 router.post(
   '/create-stand-alone-pg9-and-pg13-plan',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateCreatePg9AndPg13PlanAsStandAlone,
   createPg9AndPg13PlanAsStandAlone
 );
@@ -118,6 +120,7 @@ router.get(
 router.patch(
   '/update-pg9-and-pg13-plan-by-manager/:pg9AndPg13PlanId/:standAloneId',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validatePg9AndPg13PlanAndManagerIdParam,
   validateUpdatePg9AndPg13Plan,
   validateClientForManagerMiddleware,
@@ -132,6 +135,7 @@ router.patch(
 router.patch(
   '/update-pg9-and-pg13-plan/:pg9AndPg13PlanId',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validatePg9AndPg13PlanIdParam,
   validateUpdatePg9AndPg13Plan,
   updatePg9AndPg13PlanAsStandAlone
@@ -149,6 +153,7 @@ router.patch(
 router.delete(
   '/delete-pg9-and-pg13-plan-by-manager/:pg9AndPg13PlanId/:standAloneId',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validatePg9AndPg13PlanAndManagerIdParam,
   validateClientForManagerMiddleware,
   deletePg9AndPg13PlanAsManager
@@ -162,6 +167,7 @@ router.delete(
 router.delete(
   '/delete-pg9-and-pg13-plan/:pg9AndPg13PlanId',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validatePg9AndPg13PlanIdParam,
   deletePg9AndPg13PlanAsStandAlone
 );

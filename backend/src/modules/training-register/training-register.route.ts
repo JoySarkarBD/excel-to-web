@@ -3,24 +3,24 @@ import { Router } from 'express';
 import {
   createRegisterAsManager,
   createRegisterAsStandAlone,
+  deleteRegister,
   getAllRegisters,
   getRegisterById,
   updateRegister,
-  deleteRegister,
 } from './training-register.controller';
 
+import { validateSearchQueries } from '../../handlers/common-zod-validator';
 import {
-  validateRegisterIdParam,
-  validateRegisterAndManagerIdParam,
   validateCreateRegisterAsManager,
   validateCreateRegisterAsStandAlone,
-  validateUpdateRegister,
+  validateRegisterAndManagerIdParam,
+  validateRegisterIdParam,
   validateSearchRegistersQueries,
+  validateUpdateRegister,
 } from './training-register.validation';
-import { validateSearchQueries } from '../../handlers/common-zod-validator';
 
-import isAuthorized, { AuthenticatedRequest } from '../../middlewares/is-authorized';
 import authorizedRoles from '../../middlewares/authorized-roles';
+import isAuthorized, { AuthenticatedRequest } from '../../middlewares/is-authorized';
 import { validateClientForManagerMiddleware } from '../../middlewares/validate-client-for-manager';
 import { UserRole } from '../../models';
 
@@ -39,6 +39,7 @@ router.use(isAuthorized());
 router.post(
   '/create-register',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateClientForManagerMiddleware,
   validateCreateRegisterAsManager,
   createRegisterAsManager
@@ -52,6 +53,7 @@ router.post(
 router.post(
   '/create-stand-alone-register',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateCreateRegisterAsStandAlone,
   createRegisterAsStandAlone
 );
@@ -68,6 +70,7 @@ router.post(
 router.patch(
   '/update-register-by-manager/:registerId/:standAloneId',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateClientForManagerMiddleware,
   validateRegisterAndManagerIdParam,
   validateUpdateRegister,
@@ -82,6 +85,7 @@ router.patch(
 router.patch(
   '/update-register/:registerId',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateRegisterIdParam,
   validateUpdateRegister,
   updateRegister
@@ -99,6 +103,7 @@ router.patch(
 router.delete(
   '/delete-register-by-manager/:registerId/:standAloneId',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateClientForManagerMiddleware,
   validateRegisterAndManagerIdParam,
   deleteRegister
@@ -112,6 +117,7 @@ router.delete(
 router.delete(
   '/delete-register/:registerId',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateRegisterIdParam,
   deleteRegister
 );

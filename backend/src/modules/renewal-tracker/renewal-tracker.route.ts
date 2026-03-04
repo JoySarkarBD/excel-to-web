@@ -1,31 +1,31 @@
 // Import Router from express
-import { Router, Response, NextFunction } from 'express';
+import { NextFunction, Response, Router } from 'express';
 
 // Import controller from corresponding module
 import {
   createRenewalTrackerAsManager,
   createRenewalTrackerAsStandAlone,
-  updateRenewalTracker,
   deleteRenewalTracker,
-  getRenewalTrackerById,
   getManyRenewalTracker,
+  getRenewalTrackerById,
+  updateRenewalTracker,
 } from './renewal-tracker.controller';
 
 //Import validation from corresponding module
-import {
-  validateCreateRenewalTrackerAsManager,
-  validateCreateRenewalTrackerAsStandAlone,
-  validateUpdateRenewalTracker,
-  validateSearchRenewalTrackerQueries,
-  validateRenewalTrackerAndManagerIdParam,
-  validateRenewalTrackerIdParam,
-} from './renewal-tracker.validation';
 import { validateSearchQueries } from '../../handlers/common-zod-validator';
+import ServerResponse from '../../helpers/responses/custom-response';
 import authorizedRoles from '../../middlewares/authorized-roles';
 import isAuthorized, { AuthenticatedRequest } from '../../middlewares/is-authorized';
 import { validateClientForManagerMiddleware } from '../../middlewares/validate-client-for-manager';
 import { UserRole } from '../../models';
-import ServerResponse from '../../helpers/responses/custom-response';
+import {
+  validateCreateRenewalTrackerAsManager,
+  validateCreateRenewalTrackerAsStandAlone,
+  validateRenewalTrackerAndManagerIdParam,
+  validateRenewalTrackerIdParam,
+  validateSearchRenewalTrackerQueries,
+  validateUpdateRenewalTracker,
+} from './renewal-tracker.validation';
 
 // Initialize router
 const router = Router();
@@ -42,6 +42,7 @@ router.use(isAuthorized());
 router.post(
   '/create-renewal-tracker',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateCreateRenewalTrackerAsManager,
   validateClientForManagerMiddleware,
   createRenewalTrackerAsManager
@@ -57,6 +58,7 @@ router.post(
 router.post(
   '/create-stand-alone-renewal-tracker',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateCreateRenewalTrackerAsStandAlone,
   createRenewalTrackerAsStandAlone
 );
@@ -72,6 +74,7 @@ router.post(
 router.patch(
   '/update-renewal-tracker/:id/:standAloneId',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateClientForManagerMiddleware,
   validateRenewalTrackerAndManagerIdParam,
   validateUpdateRenewalTracker,
@@ -89,6 +92,7 @@ router.patch(
 router.patch(
   '/update-renewal-tracker/:id',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateRenewalTrackerIdParam,
   validateUpdateRenewalTracker,
   updateRenewalTracker
@@ -105,6 +109,7 @@ router.patch(
 router.delete(
   '/delete-renewal-tracker/:id/:standAloneId',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateClientForManagerMiddleware,
   validateRenewalTrackerAndManagerIdParam,
   deleteRenewalTracker
@@ -121,6 +126,7 @@ router.delete(
 router.delete(
   '/delete-renewal-tracker/:id',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateRenewalTrackerIdParam,
   deleteRenewalTracker
 );
@@ -189,4 +195,3 @@ router.get(
 
 // Export the router
 module.exports = router;
-

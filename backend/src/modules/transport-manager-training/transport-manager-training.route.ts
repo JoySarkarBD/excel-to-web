@@ -4,29 +4,29 @@ import { Router } from 'express';
 // Import controller from corresponding module
 import {
   createTransportManagerTraining,
-  updateTransportManagerTraining,
   deleteTransportManagerTraining,
-  getTransportManagerTrainingById,
   getManyTransportManagerTraining,
+  getTransportManagerTrainingById,
+  updateTransportManagerTraining,
 } from './transport-manager-training.controller';
 
 //Import validation from corresponding module
+import { validateId, validateSearchQueries } from '../../handlers/common-zod-validator';
+import authorizedRoles from '../../middlewares/authorized-roles';
+import isAuthorized from '../../middlewares/is-authorized';
+import { UserRole } from '../../models';
 import {
   validateCreateTransportManagerTraining,
   validateUpdateTransportManagerTraining,
 } from './transport-manager-training.validation';
-import {
-  validateId,
-  validateSearchQueries,
-} from '../../handlers/common-zod-validator';
-import authorizedRoles from '../../middlewares/authorized-roles';
-import isAuthorized from '../../middlewares/is-authorized';
-import { UserRole } from '../../models';
 
 // Initialize router
 const router = Router();
-router.use(isAuthorized());
-router.use(authorizedRoles([UserRole.TRANSPORT_MANAGER]));
+router.use(
+  isAuthorized(),
+  authorizedRoles([UserRole.TRANSPORT_MANAGER])
+  // checkSubscriptionValidity,
+);
 
 // Define route handlers
 /**
@@ -92,4 +92,3 @@ router.get('/get-transport-manager-training/:id', validateId, getTransportManage
 
 // Export the router
 module.exports = router;
-

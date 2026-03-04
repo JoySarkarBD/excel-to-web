@@ -3,24 +3,24 @@ import { Router } from 'express';
 import {
   createTrainingAsManager,
   createTrainingAsStandAlone,
+  deleteTraining,
   getAllTrainings,
   getTrainingById,
   updateTraining,
-  deleteTraining,
 } from './training.controller';
 
+import { validateSearchQueries } from '../../handlers/common-zod-validator';
 import {
-  validateTrainingIdParam,
-  validateTrainingAndManagerIdParam,
   validateCreateTrainingAsManager,
   validateCreateTrainingAsStandAlone,
-  validateUpdateTraining,
   validateSearchTrainingsQueries,
+  validateTrainingAndManagerIdParam,
+  validateTrainingIdParam,
+  validateUpdateTraining,
 } from './training.validation';
-import { validateId, validateSearchQueries } from '../../handlers/common-zod-validator';
 
-import isAuthorized, { AuthenticatedRequest } from '../../middlewares/is-authorized';
 import authorizedRoles from '../../middlewares/authorized-roles';
+import isAuthorized, { AuthenticatedRequest } from '../../middlewares/is-authorized';
 import { validateClientForManagerMiddleware } from '../../middlewares/validate-client-for-manager';
 import { UserRole } from '../../models';
 
@@ -39,6 +39,7 @@ router.use(isAuthorized());
 router.post(
   '/create-training',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateClientForManagerMiddleware,
   validateCreateTrainingAsManager,
   createTrainingAsManager
@@ -52,6 +53,7 @@ router.post(
 router.post(
   '/create-stand-alone-training',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateCreateTrainingAsStandAlone,
   createTrainingAsStandAlone
 );
@@ -68,6 +70,7 @@ router.post(
 router.patch(
   '/update-training-by-manager/:trainingId/:standAloneId',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateClientForManagerMiddleware,
   validateTrainingAndManagerIdParam,
   validateUpdateTraining,
@@ -82,6 +85,7 @@ router.patch(
 router.patch(
   '/update-training/:trainingId',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateTrainingIdParam,
   validateUpdateTraining,
   updateTraining
@@ -99,6 +103,7 @@ router.patch(
 router.delete(
   '/delete-training-by-manager/:trainingId/:standAloneId',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateClientForManagerMiddleware,
   validateTrainingAndManagerIdParam,
   deleteTraining
@@ -112,6 +117,7 @@ router.delete(
 router.delete(
   '/delete-training/:trainingId',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateTrainingIdParam,
   deleteTraining
 );

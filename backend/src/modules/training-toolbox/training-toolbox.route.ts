@@ -1,31 +1,31 @@
 // Import Router from express
-import { Router, Response, NextFunction } from 'express';
+import { NextFunction, Response, Router } from 'express';
 
 // Import controller from corresponding module
 import {
   createTrainingToolboxAsManager,
   createTrainingToolboxAsStandAlone,
-  updateTrainingToolbox,
   deleteTrainingToolbox,
-  getTrainingToolboxById,
   getManyTrainingToolbox,
+  getTrainingToolboxById,
+  updateTrainingToolbox,
 } from './training-toolbox.controller';
 
 //Import validation from corresponding module
-import {
-  validateCreateTrainingToolboxAsManager,
-  validateCreateTrainingToolboxAsStandAlone,
-  validateUpdateTrainingToolbox,
-  validateSearchTrainingToolboxQueries,
-  validateTrainingToolboxAndManagerIdParam,
-  validateTrainingToolboxIdParam,
-} from './training-toolbox.validation';
 import { validateSearchQueries } from '../../handlers/common-zod-validator';
+import ServerResponse from '../../helpers/responses/custom-response';
 import authorizedRoles from '../../middlewares/authorized-roles';
 import isAuthorized, { AuthenticatedRequest } from '../../middlewares/is-authorized';
 import { validateClientForManagerMiddleware } from '../../middlewares/validate-client-for-manager';
 import { UserRole } from '../../models';
-import ServerResponse from '../../helpers/responses/custom-response';
+import {
+  validateCreateTrainingToolboxAsManager,
+  validateCreateTrainingToolboxAsStandAlone,
+  validateSearchTrainingToolboxQueries,
+  validateTrainingToolboxAndManagerIdParam,
+  validateTrainingToolboxIdParam,
+  validateUpdateTrainingToolbox,
+} from './training-toolbox.validation';
 
 // Initialize router
 const router = Router();
@@ -42,6 +42,7 @@ router.use(isAuthorized());
 router.post(
   '/create-training-toolbox',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateCreateTrainingToolboxAsManager,
   validateClientForManagerMiddleware,
   createTrainingToolboxAsManager
@@ -57,6 +58,7 @@ router.post(
 router.post(
   '/create-stand-alone-training-toolbox',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateCreateTrainingToolboxAsStandAlone,
   createTrainingToolboxAsStandAlone
 );
@@ -72,6 +74,7 @@ router.post(
 router.patch(
   '/update-training-toolbox/:id/:standAloneId',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateClientForManagerMiddleware,
   validateTrainingToolboxAndManagerIdParam,
   validateUpdateTrainingToolbox,
@@ -89,6 +92,7 @@ router.patch(
 router.patch(
   '/update-training-toolbox/:id',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateTrainingToolboxIdParam,
   validateUpdateTrainingToolbox,
   updateTrainingToolbox
@@ -105,6 +109,7 @@ router.patch(
 router.delete(
   '/delete-training-toolbox/:id/:standAloneId',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateClientForManagerMiddleware,
   validateTrainingToolboxAndManagerIdParam,
   deleteTrainingToolbox
@@ -121,6 +126,7 @@ router.delete(
 router.delete(
   '/delete-training-toolbox/:id',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateTrainingToolboxIdParam,
   deleteTrainingToolbox
 );
@@ -189,4 +195,3 @@ router.get(
 
 // Export the router
 module.exports = router;
-

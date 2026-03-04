@@ -1,30 +1,30 @@
 // Import Router from express
-import { Router, Response, NextFunction } from 'express';
+import { NextFunction, Response, Router } from 'express';
 
 // Import controller from corresponding module
 import {
   createDriverTachograph,
-  updateDriverTachograph,
   deleteDriverTachograph,
   getDriverTachographById,
   getManyDriverTachograph,
+  updateDriverTachograph,
 } from './driver-tachograph.controller';
 
 //Import validation from corresponding module
-import {
-  validateCreateDriverTachographAsManager,
-  validateCreateDriverTachographAsStandAlone,
-  validateUpdateDriverTachograph,
-  validateSearchDriverTachographQueries,
-  validateDriverTachographAndManagerIdParam,
-  validateDriverTachographIdParam,
-} from './driver-tachograph.validation';
 import { validateSearchQueries } from '../../handlers/common-zod-validator';
+import ServerResponse from '../../helpers/responses/custom-response';
 import authorizedRoles from '../../middlewares/authorized-roles';
 import isAuthorized, { AuthenticatedRequest } from '../../middlewares/is-authorized';
 import { validateClientForManagerMiddleware } from '../../middlewares/validate-client-for-manager';
 import { UserRole } from '../../models';
-import ServerResponse from '../../helpers/responses/custom-response';
+import {
+  validateCreateDriverTachographAsManager,
+  validateCreateDriverTachographAsStandAlone,
+  validateDriverTachographAndManagerIdParam,
+  validateDriverTachographIdParam,
+  validateSearchDriverTachographQueries,
+  validateUpdateDriverTachograph,
+} from './driver-tachograph.validation';
 
 // Initialize router
 const router = Router();
@@ -41,6 +41,7 @@ router.use(isAuthorized());
 router.post(
   '/create-driver-tachograph',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateCreateDriverTachographAsManager,
   validateClientForManagerMiddleware,
   createDriverTachograph
@@ -54,6 +55,7 @@ router.post(
 router.post(
   '/create-stand-alone-driver-tachograph',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateCreateDriverTachographAsStandAlone,
   createDriverTachograph
 );
@@ -69,6 +71,7 @@ router.post(
 router.patch(
   '/update-driver-tachograph/:id/:standAloneId',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateClientForManagerMiddleware,
   validateDriverTachographAndManagerIdParam,
   validateUpdateDriverTachograph,
@@ -83,6 +86,7 @@ router.patch(
 router.patch(
   '/update-driver-tachograph/:id',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateDriverTachographIdParam,
   validateUpdateDriverTachograph,
   updateDriverTachograph
@@ -99,6 +103,7 @@ router.patch(
 router.delete(
   '/delete-driver-tachograph/:id/:standAloneId',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateClientForManagerMiddleware,
   validateDriverTachographAndManagerIdParam,
   deleteDriverTachograph
@@ -112,6 +117,7 @@ router.delete(
 router.delete(
   '/delete-driver-tachograph/:id',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateDriverTachographIdParam,
   deleteDriverTachograph
 );
@@ -174,4 +180,3 @@ router.get(
 
 // Export the router
 module.exports = router;
-

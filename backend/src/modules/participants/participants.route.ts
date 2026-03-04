@@ -1,36 +1,34 @@
 import { Router } from 'express';
 
 import {
-  getAllParticipants,
-  getParticipantById,
   createParticipantAsManager,
   createParticipantAsStandAlone,
-  updateParticipant,
-  deleteParticipant,
-  getAllRoles,
   createRoleAsManager,
   createRoleAsStandAlone,
-  updateRole,
+  deleteParticipant,
   deleteRole,
+  getAllParticipants,
+  getAllRoles,
+  getParticipantById,
+  updateParticipant,
+  updateRole,
 } from './participants.controller';
 
+import { validateId, validateSearchQueries } from '../../handlers/common-zod-validator';
 import {
-  validateParticipantIdParam,
-  validateParticipantAndManagerIdParam,
-  validateRoleIdParam,
-  validateRoleAndManagerIdParam,
   validateCreateParticipantAsManager,
   validateCreateParticipantAsStandAlone,
-  validateUpdateParticipant,
   validateCreateRoleAsManager,
   validateCreateRoleAsStandAlone,
-  validateUpdateRole,
+  validateParticipantAndManagerIdParam,
+  validateRoleAndManagerIdParam,
   validateSearchParticipantsQueries,
+  validateUpdateParticipant,
+  validateUpdateRole,
 } from './participants.validation';
-import { validateId, validateSearchQueries } from '../../handlers/common-zod-validator';
 
-import isAuthorized, { AuthenticatedRequest } from '../../middlewares/is-authorized';
 import authorizedRoles from '../../middlewares/authorized-roles';
+import isAuthorized, { AuthenticatedRequest } from '../../middlewares/is-authorized';
 import { validateClientForManagerMiddleware } from '../../middlewares/validate-client-for-manager';
 import { UserRole } from '../../models';
 
@@ -49,6 +47,7 @@ router.use(isAuthorized());
 router.post(
   '/create-role',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateClientForManagerMiddleware,
   validateCreateRoleAsManager,
   createRoleAsManager
@@ -62,6 +61,7 @@ router.post(
 router.post(
   '/create-stand-alone-role',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateCreateRoleAsStandAlone,
   createRoleAsStandAlone
 );
@@ -74,6 +74,7 @@ router.post(
 router.patch(
   '/update-role-by-manager/:roleId/:standAloneId',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateClientForManagerMiddleware,
   validateRoleAndManagerIdParam,
   validateUpdateRole,
@@ -88,6 +89,7 @@ router.patch(
 router.patch(
   '/update-role/:id',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateId,
   validateUpdateRole,
   updateRole
@@ -101,6 +103,7 @@ router.patch(
 router.delete(
   '/delete-role-by-manager/:roleId/:standAloneId',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateClientForManagerMiddleware,
   validateRoleAndManagerIdParam,
   deleteRole
@@ -114,6 +117,7 @@ router.delete(
 router.delete(
   '/delete-role/:id',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateId,
   deleteRole
 );
@@ -153,6 +157,7 @@ router.get(
 router.post(
   '/create-participant',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateClientForManagerMiddleware,
   validateCreateParticipantAsManager,
   createParticipantAsManager
@@ -166,6 +171,7 @@ router.post(
 router.post(
   '/create-stand-alone-participant',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateCreateParticipantAsStandAlone,
   createParticipantAsStandAlone
 );
@@ -178,6 +184,7 @@ router.post(
 router.patch(
   '/update-participant-by-manager/:participantId/:standAloneId',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateClientForManagerMiddleware,
   validateParticipantAndManagerIdParam,
   validateUpdateParticipant,
@@ -192,6 +199,7 @@ router.patch(
 router.patch(
   '/update-participant/:id',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateId,
   validateUpdateParticipant,
   updateParticipant
@@ -205,6 +213,7 @@ router.patch(
 router.delete(
   '/delete-participant-by-manager/:participantId/:standAloneId',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateClientForManagerMiddleware,
   validateParticipantAndManagerIdParam,
   deleteParticipant
@@ -218,6 +227,7 @@ router.delete(
 router.delete(
   '/delete-participant/:id',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateId,
   deleteParticipant
 );

@@ -1,37 +1,34 @@
 // Import Router from express
-import { Router, Response, NextFunction } from 'express';
+import { NextFunction, Response, Router } from 'express';
 
 // Import controller from corresponding module
 import {
   createSpotCheckAsManager,
   createSpotCheckAsStandAlone,
-  updateSpotCheck,
   deleteSpotCheck,
-  getSpotCheckById,
   getManySpotCheck,
+  getSpotCheckById,
+  updateSpotCheck,
 } from './spot-check.controller';
 
 //Import validation from corresponding module
+import { validateId, validateSearchQueries } from '../../handlers/common-zod-validator';
+import ServerResponse from '../../helpers/responses/custom-response';
+import authorizedRoles from '../../middlewares/authorized-roles';
+import isAuthorized, { AuthenticatedRequest } from '../../middlewares/is-authorized';
+import { validateClientForManagerMiddleware } from '../../middlewares/validate-client-for-manager';
+import { UserRole } from '../../models';
 import {
   validateCreateSpotCheckAsManager,
   validateCreateSpotCheckAsStandAlone,
-  validateUpdateSpotCheck,
   validateSearchSpotChecksQueries,
-  validateSpotCheckIdParam,
   validateSpotCheckAndManagerIdParam,
+  validateUpdateSpotCheck,
 } from './spot-check.validation';
-import authorizedRoles from '../../middlewares/authorized-roles';
-import { validateClientForManagerMiddleware } from '../../middlewares/validate-client-for-manager';
-import { UserRole } from '../../models';
-import { validateId, validateSearchQueries } from '../../handlers/common-zod-validator';
-import isAuthorized, { AuthenticatedRequest } from '../../middlewares/is-authorized';
-import ServerResponse from '../../helpers/responses/custom-response';
 
 // Initialize router
 const router = Router();
 router.use(isAuthorized());
-
-//TODO - have to check subscription middleware in create update & delete routes
 
 // Define route handlers
 /**
@@ -42,6 +39,7 @@ router.use(isAuthorized());
 router.post(
   '/create-spot-check',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateCreateSpotCheckAsManager,
   validateClientForManagerMiddleware,
   createSpotCheckAsManager
@@ -55,6 +53,7 @@ router.post(
 router.post(
   '/create-stand-alone-spot-check',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateCreateSpotCheckAsStandAlone,
   createSpotCheckAsStandAlone
 );
@@ -70,6 +69,7 @@ router.post(
 router.patch(
   '/update-spot-check/:id/:standAloneId',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateClientForManagerMiddleware,
   validateSpotCheckAndManagerIdParam,
   validateUpdateSpotCheck,
@@ -87,6 +87,7 @@ router.patch(
 router.patch(
   '/update-spot-check/:id',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateId,
   validateUpdateSpotCheck,
   updateSpotCheck
@@ -103,6 +104,7 @@ router.patch(
 router.delete(
   '/delete-spot-check/:id/:standAloneId',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateClientForManagerMiddleware,
   validateSpotCheckAndManagerIdParam,
   deleteSpotCheck
@@ -119,6 +121,7 @@ router.delete(
 router.delete(
   '/delete-spot-check/:id',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateId,
   deleteSpotCheck
 );
@@ -188,4 +191,3 @@ router.get(
 
 // Export the router
 module.exports = router;
-

@@ -39,6 +39,7 @@ router.use(isAuthorized());
 router.post(
   '/create-sub-contractor',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateClientForManagerMiddleware,
   validateCreateSubContractorAsManager,
   createSubContractorAsManager
@@ -52,6 +53,7 @@ router.post(
 router.post(
   '/create-stand-alone-sub-contractor',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateCreateSubContractorAsStandAlone,
   createSubContractorAsStandAlone
 );
@@ -68,6 +70,7 @@ router.post(
 router.patch(
   '/update-sub-contractor-by-manager/:subContractorId/:standAloneId',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateClientForManagerMiddleware,
   validateSubContractorAndManagerIdParam,
   validateUpdateSubContractor,
@@ -82,6 +85,7 @@ router.patch(
 router.patch(
   '/update-sub-contractor/:subContractorId',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateSubContractorIdParam,
   validateUpdateSubContractor,
   updateSubContractor
@@ -99,6 +103,7 @@ router.patch(
 router.delete(
   '/delete-sub-contractor-by-manager/:subContractorId/:standAloneId',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateClientForManagerMiddleware,
   validateSubContractorAndManagerIdParam,
   deleteSubContractor
@@ -112,6 +117,7 @@ router.delete(
 router.delete(
   '/delete-sub-contractor/:subContractorId',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateSubContractorIdParam,
   deleteSubContractor
 );
@@ -162,4 +168,3 @@ router.get(
 );
 
 module.exports = router;
-

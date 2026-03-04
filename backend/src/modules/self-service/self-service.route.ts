@@ -3,15 +3,21 @@ import { NextFunction, Response, Router } from 'express';
 
 // Import controller from corresponding module
 import {
-  updateSelfService,
-  deleteSelfService,
-  getSelfServiceById,
-  getManySelfService,
   createSelfServiceAsManager,
   createSelfServiceAsStandAlone,
+  deleteSelfService,
+  getManySelfService,
+  getSelfServiceById,
+  updateSelfService,
 } from './self-service.controller';
 
 //Import validation from corresponding module
+import { validateSearchQueries } from '../../handlers/common-zod-validator';
+import ServerResponse from '../../helpers/responses/custom-response';
+import authorizedRoles from '../../middlewares/authorized-roles';
+import isAuthorized, { AuthenticatedRequest } from '../../middlewares/is-authorized';
+import { validateClientForManagerMiddleware } from '../../middlewares/validate-client-for-manager';
+import { UserRole } from '../../models';
 import {
   validateCreateSelfServiceAsManager,
   validateCreateSelfServiceAsStandAlone,
@@ -20,12 +26,6 @@ import {
   validateSelfServiceIdParam,
   validateUpdateSelfService,
 } from './self-service.validation';
-import { validateId, validateSearchQueries } from '../../handlers/common-zod-validator';
-import isAuthorized, { AuthenticatedRequest } from '../../middlewares/is-authorized';
-import authorizedRoles from '../../middlewares/authorized-roles';
-import { UserRole } from '../../models';
-import { validateClientForManagerMiddleware } from '../../middlewares/validate-client-for-manager';
-import ServerResponse from '../../helpers/responses/custom-response';
 
 // Initialize router
 const router = Router();
@@ -44,6 +44,7 @@ router.use(isAuthorized());
 router.post(
   '/create-self-service',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateCreateSelfServiceAsManager,
   validateClientForManagerMiddleware,
   createSelfServiceAsManager
@@ -61,6 +62,7 @@ router.post(
 router.post(
   '/create-stand-alone-self-service',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateCreateSelfServiceAsStandAlone,
   createSelfServiceAsStandAlone
 );
@@ -76,6 +78,7 @@ router.post(
 router.patch(
   '/update-self-service/:id/:standAloneId',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateClientForManagerMiddleware,
   validateSelfServiceAndManagerIdParam,
   validateUpdateSelfService,
@@ -93,6 +96,7 @@ router.patch(
 router.patch(
   '/update-self-service/:id',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateUpdateSelfService,
   updateSelfService
 );
@@ -108,6 +112,7 @@ router.patch(
 router.delete(
   '/delete-self-service/:id/:standAloneId',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateClientForManagerMiddleware,
   validateSelfServiceAndManagerIdParam,
   deleteSelfService
@@ -124,6 +129,7 @@ router.delete(
 router.delete(
   '/delete-self-service/:id',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateSelfServiceIdParam,
   deleteSelfService
 );
@@ -194,4 +200,3 @@ router.get(
 
 // Export the router
 module.exports = router;
-

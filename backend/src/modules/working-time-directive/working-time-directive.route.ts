@@ -3,25 +3,25 @@ import { Router } from 'express';
 import {
   createWorkingTimeDirectiveAsManager,
   createWorkingTimeDirectiveAsStandAlone,
+  deleteWorkingTimeDirective,
   getAllWorkingTimeDirectives,
+  getDriversWithVehicles,
   getWorkingTimeDirectiveById,
   updateWorkingTimeDirective,
-  deleteWorkingTimeDirective,
-  getDriversWithVehicles,
 } from './working-time-directive.controller';
 
+import { validateSearchQueries } from '../../handlers/common-zod-validator';
 import {
-  validateWorkingTimeDirectiveIdParam,
-  validateWorkingTimeDirectiveAndManagerIdParam,
   validateCreateWorkingTimeDirectiveAsManager,
   validateCreateWorkingTimeDirectiveAsStandAlone,
-  validateUpdateWorkingTimeDirective,
   validateSearchWorkingTimeDirectivesQueries,
+  validateUpdateWorkingTimeDirective,
+  validateWorkingTimeDirectiveAndManagerIdParam,
+  validateWorkingTimeDirectiveIdParam,
 } from './working-time-directive.validation';
-import { validateSearchQueries } from '../../handlers/common-zod-validator';
 
-import isAuthorized, { AuthenticatedRequest } from '../../middlewares/is-authorized';
 import authorizedRoles from '../../middlewares/authorized-roles';
+import isAuthorized, { AuthenticatedRequest } from '../../middlewares/is-authorized';
 import { validateClientForManagerMiddleware } from '../../middlewares/validate-client-for-manager';
 import { UserRole } from '../../models';
 
@@ -40,6 +40,7 @@ router.use(isAuthorized());
 router.post(
   '/create-working-time-directive',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateClientForManagerMiddleware,
   validateCreateWorkingTimeDirectiveAsManager,
   createWorkingTimeDirectiveAsManager
@@ -53,6 +54,7 @@ router.post(
 router.post(
   '/create-stand-alone-working-time-directive',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateCreateWorkingTimeDirectiveAsStandAlone,
   createWorkingTimeDirectiveAsStandAlone
 );
@@ -69,6 +71,7 @@ router.post(
 router.patch(
   '/update-working-time-directive-by-manager/:workingTimeDirectiveId/:standAloneId',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateClientForManagerMiddleware,
   validateWorkingTimeDirectiveAndManagerIdParam,
   validateUpdateWorkingTimeDirective,
@@ -83,6 +86,7 @@ router.patch(
 router.patch(
   '/update-working-time-directive/:workingTimeDirectiveId',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateWorkingTimeDirectiveIdParam,
   validateUpdateWorkingTimeDirective,
   updateWorkingTimeDirective
@@ -100,6 +104,7 @@ router.patch(
 router.delete(
   '/delete-working-time-directive-by-manager/:workingTimeDirectiveId/:standAloneId',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateClientForManagerMiddleware,
   validateWorkingTimeDirectiveAndManagerIdParam,
   deleteWorkingTimeDirective
@@ -113,6 +118,7 @@ router.delete(
 router.delete(
   '/delete-working-time-directive/:workingTimeDirectiveId',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateWorkingTimeDirectiveIdParam,
   deleteWorkingTimeDirective
 );

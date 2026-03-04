@@ -1,31 +1,31 @@
 // Import Router from express
-import { Router, Response, NextFunction } from 'express';
+import { NextFunction, Response, Router } from 'express';
 
 // Import controller from corresponding module
 import {
   createOcrsPlanAsManager,
   createOcrsPlanAsStandAlone,
-  updateOcrsPlan,
   deleteOcrsPlan,
-  getOcrsPlanById,
   getManyOcrsPlan,
+  getOcrsPlanById,
+  updateOcrsPlan,
 } from './ocrs-plan.controller';
 
 //Import validation from corresponding module
-import {
-  validateCreateOcrsPlanAsManager,
-  validateCreateOcrsPlanAsStandAlone,
-  validateUpdateOcrsPlan,
-  validateSearchOcrsPlanQueries,
-  validateOcrsPlanAndManagerIdParam,
-  validateOcrsPlanIdParam,
-} from './ocrs-plan.validation';
 import { validateSearchQueries } from '../../handlers/common-zod-validator';
+import ServerResponse from '../../helpers/responses/custom-response';
 import authorizedRoles from '../../middlewares/authorized-roles';
 import isAuthorized, { AuthenticatedRequest } from '../../middlewares/is-authorized';
 import { validateClientForManagerMiddleware } from '../../middlewares/validate-client-for-manager';
 import { UserRole } from '../../models';
-import ServerResponse from '../../helpers/responses/custom-response';
+import {
+  validateCreateOcrsPlanAsManager,
+  validateCreateOcrsPlanAsStandAlone,
+  validateOcrsPlanAndManagerIdParam,
+  validateOcrsPlanIdParam,
+  validateSearchOcrsPlanQueries,
+  validateUpdateOcrsPlan,
+} from './ocrs-plan.validation';
 
 // Initialize router
 const router = Router();
@@ -42,6 +42,7 @@ router.use(isAuthorized());
 router.post(
   '/create-ocrs-plan',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateCreateOcrsPlanAsManager,
   validateClientForManagerMiddleware,
   createOcrsPlanAsManager
@@ -57,6 +58,7 @@ router.post(
 router.post(
   '/create-stand-alone-ocrs-plan',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateCreateOcrsPlanAsStandAlone,
   createOcrsPlanAsStandAlone
 );
@@ -72,6 +74,7 @@ router.post(
 router.patch(
   '/update-ocrs-plan/:id/:standAloneId',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateClientForManagerMiddleware,
   validateOcrsPlanAndManagerIdParam,
   validateUpdateOcrsPlan,
@@ -89,6 +92,7 @@ router.patch(
 router.patch(
   '/update-ocrs-plan/:id',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateOcrsPlanIdParam,
   validateUpdateOcrsPlan,
   updateOcrsPlan
@@ -105,6 +109,7 @@ router.patch(
 router.delete(
   '/delete-ocrs-plan/:id/:standAloneId',
   authorizedRoles([UserRole.TRANSPORT_MANAGER]),
+  // checkSubscriptionValidity,
   validateClientForManagerMiddleware,
   validateOcrsPlanAndManagerIdParam,
   deleteOcrsPlan
@@ -121,6 +126,7 @@ router.delete(
 router.delete(
   '/delete-ocrs-plan/:id',
   authorizedRoles([UserRole.STANDALONE_USER]),
+  // checkSubscriptionValidity,
   validateOcrsPlanIdParam,
   deleteOcrsPlan
 );
@@ -189,4 +195,3 @@ router.get(
 
 // Export the router
 module.exports = router;
-
