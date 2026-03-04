@@ -21,6 +21,7 @@ import { usePathname } from "next/navigation";
 import { ChevronDown, LogOut, UserRoundCog } from "lucide-react";
 import Link from "next/link";
 import { DesktopSidebarToggle } from "./smart-toggle";
+import { AuthAction } from "@/service/auth";
 
 const clients = [
   { name: "All Clients", id: 0 },
@@ -119,8 +120,13 @@ export function AppSidebar() {
       <SidebarFooter className='bg-muted p-3'>
         <SidebarMenuButton
           asChild
-          className='w-full justify-start text-destructive hover:bg-destructive/10 hover:text-destructive'>
-          <div className='flex items-center gap-2 text-[16px]'>
+          className='w-full cursor-pointer justify-start text-destructive hover:bg-destructive/10 hover:text-destructive'>
+          <div
+          onClick={async()=>{
+         const logout = await AuthAction.LogOut();
+         console.log(logout, 'Log Out success'); // ! Must be remove console log
+          }}
+          className='flex items-center gap-2 text-[16px]'>
             <LogOut className='h-4 w-4' />
             <span>Logout Account</span>
           </div>

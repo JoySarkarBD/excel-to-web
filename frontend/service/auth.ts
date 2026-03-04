@@ -1,6 +1,7 @@
-"use client";
+
 import { base_url } from "@/lib/utils";
 import axios from "axios";
+import Cookies from "js-cookie";
 
 export interface IRegister {
   fullName: string;
@@ -161,11 +162,52 @@ const ResetForgetPassword = async(data:IResetForgetPassword)=>{
 
 }
 
+const GetAuthToken = (): string | null => {
+  return Cookies.get("token") || null;
+};
+const RemoveAuthToken = (): void => {
+  Cookies.remove("token");
+};
+const LogOut = async (): Promise<IApiResponse> => {
+  const token = GetAuthToken();
+
+  if (!token) {
+    throw new Error("No authentication token found");
+  }
+
+  try {
+    const response = await axios.post<IApiResponse>(
+      `${base_url}/auth/logout`,
+      {}, // usually no body needed for logout
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    //  Remove token after successful logout
+    Cookies.remove("token", { path: "/" });
+
+    return response.data;
+  } catch (error: unknown) {
+    if (axios.isAxiosError<IApiResponse>(error)) {
+      const apiError = error.response?.data?.error;
+      throw new Error(
+        typeof apiError === "string" ? apiError : "Something went wrong"
+      );
+    }
+    throw new Error("Something went wrong");
+  }
+};
 export const AuthAction = {
   RegisterUser,
   LoginUser,
   VerifyEmail,
   ResendVerificationEmail,
   ForgotPassword,
-  ResetForgetPassword
+  ResetForgetPassword,
+  GetAuthToken,
+  RemoveAuthToken,
+  LogOut,
 };
