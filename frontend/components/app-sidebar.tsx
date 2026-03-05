@@ -22,32 +22,35 @@ import { ChevronDown, LogOut, UserRoundCog } from "lucide-react";
 import Link from "next/link";
 import { DesktopSidebarToggle } from "./smart-toggle";
 import { AuthAction } from "@/service/auth";
+import { ClientAction } from "@/service/client";
+import { useEffect, useState } from "react";
 
-const clients = [
-  { name: "All Clients", id: 0 },
-  { name: "Intel Ltd", id: 1 },
-  { name: "RCNL Ltd", id: 2 },
-  { name: "Zubair Ltd", id: 3 },
-  { name: "Greenwood Ltd", id: 4 },
-];
+interface SidebarClient {
+  id: string;
+  name: string;
+}
 
 export function AppSidebar() {
-  const pathname = usePathname(); // Get current URL path
+  const pathname = usePathname();
+  const [clients, setClients] = useState<SidebarClient[]>([]);
 
-  // Function to determine active client from URL
-  const getActiveClientId = () => {
-    if (pathname === "/dashboard") return 0; // All Clients is active
+  // Fetch real clients on mount
+  useEffect(() => {
+    ClientAction.getClients({ showPerPage: 10, pageNo: 1 })
+      .then((res) => {
+        if (res.status && res.data?.data) {
+          setClients(
+            res.data.data.map((row) => ({
+              id: row.client._id,
+              name: row.client.fullName,
+            }))
+          );
+        }
+      })
+      .catch(() => {});
+  }, []);
 
-    // Check if URL matches /dashboard/1, /dashboard/2, etc.
-    const match = pathname.match(/^\/dashboard\/(\d+)/);
-    if (match) {
-      return parseInt(match[1], 10);
-    }
-
-    return 0; // Default to All Clients
-  };
-
-  const activeClientId = getActiveClientId();
+  const activeClientId = pathname.split("/")[2] ?? "";
 
   return (
     <Sidebar collapsible='icon' className='border-r bg-sidebar'>
@@ -76,15 +79,15 @@ export function AppSidebar() {
                     <SidebarMenuSubItem key={client.id} className='relative'>
                       {/* Vertical line */}
                       {index < clients.length - 1 && (
-                        <div className='absolute left-6 -top-1 bottom-0 w-0.5 bg-(--muted-foreground) ' />
+                        <div className='absolute left-6 -top-1 bottom-0 w-0.5 bg-muted-foreground ' />
                       )}
 
                       {/* Horizontal branch line */}
-                      <div className='absolute left-6 top-1/2 w-5 h-0.5 bg-(--muted-foreground)' />
+                      <div className='absolute left-6 top-1/2 w-5 h-0.5 bg-muted-foreground' />
 
                       {/* Corner for last item */}
                       {index === clients.length - 1 && (
-                        <div className='absolute left-6 -top-1 w-0.5 h-7 bg-(--muted-foreground)' />
+                        <div className='absolute left-6 -top-1 w-0.5 h-7 bg-muted-foreground' />
                       )}
                       <SidebarMenuSubButton
                         asChild
@@ -99,11 +102,7 @@ export function AppSidebar() {
     }
   `}>
                         <Link
-                          href={
-                            client.id === 0
-                              ? "/dashboard"
-                              : `/dashboard/${client.id}`
-                          }
+                          href={`/dashboard/${client.id}`}
                           className='block'>
                           {client.name}
                         </Link>
