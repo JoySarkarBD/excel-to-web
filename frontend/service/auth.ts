@@ -27,7 +27,7 @@ export interface IApiResponse<T = unknown> {
   message: string;
   data?: T;
   error?: string | Record<string, string>;
-  errors?:string
+  errors?: string | { field?: string; message: string }[];
 }
 
 export interface IVerifyEamil {

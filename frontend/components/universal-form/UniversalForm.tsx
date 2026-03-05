@@ -1,4 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import {
   Controller,
@@ -474,7 +475,14 @@ export default function UniversalForm<T extends FieldValues>({
             disabled={formState.isSubmitting}
             className="bg-primary border-primary cursor-pointer rounded-none border py-4.75 text-white"
           >
-            {formState.isSubmitting ? "Submitting..." : submitText || "Submit"}
+            {formState.isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {submitText ? `${submitText}...` : "Submitting..."}
+              </>
+            ) : (
+              submitText || "Submit"
+            )}
           </Button>
         </div>
       </form>

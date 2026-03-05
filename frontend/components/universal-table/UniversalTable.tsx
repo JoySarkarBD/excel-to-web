@@ -439,7 +439,7 @@ export default function UniversalTable<T>({
                     )}
 
                     {columns.map((col) => (
-                      <TableCell key={String(col.key)} className="min-w-[100px]">
+                      <TableCell key={String(col.key)} className="min-w-25">
 
                         {col.render ? col.render(row) : String(row[col.key])}
                       </TableCell>
