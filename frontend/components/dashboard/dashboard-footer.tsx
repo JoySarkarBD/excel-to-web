@@ -108,7 +108,7 @@ export default function DashboardFooter() {
             setMaxScroll(container.scrollWidth - container.clientWidth);
           }}>
           {footerItems.map((item, index) => {
-            const isActive = pathname === item.href;
+            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
             return (
               <Link
                 key={index}

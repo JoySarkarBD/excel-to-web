@@ -321,16 +321,14 @@ const getManyVehicle = async (
   }
 
   if (standAloneId) {
-    andConditions.push({
-      $or: [
-        { standAloneId: new mongoose.Types.ObjectId(standAloneId) },
-        { createdBy: new mongoose.Types.ObjectId(standAloneId) },
-        { createdBy: new mongoose.Types.ObjectId(createdBy!) },
-      ],
-    });
-  } else if (createdBy) {
-    andConditions.push({ createdBy: new mongoose.Types.ObjectId(createdBy) });
-  }
+      andConditions.push({ standAloneId: new mongoose.Types.ObjectId(standAloneId) });
+      if (createdBy) {
+        andConditions.push({ createdBy: new mongoose.Types.ObjectId(createdBy) });
+      }
+    } else if (createdBy) {
+      // Stand-alone user: filter by createdBy only
+      andConditions.push({ createdBy: new mongoose.Types.ObjectId(createdBy) });
+    }
 
   const searchFilter: any = {};
 

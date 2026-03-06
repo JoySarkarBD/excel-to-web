@@ -30,6 +30,15 @@ interface SidebarClient {
   name: string;
 }
 
+/**
+ * Modules that use /dashboard/[slug]/[standAloneId] pattern.
+ * Add new modules here as they are built.
+ */
+const CLIENT_MODULES: { slug: string; label: string }[] = [
+  { slug: "driver-details", label: "Driver Details" },
+  { slug: "vehicle-list", label: "Vehicle List" },
+];
+
 export function AppSidebar() {
   const pathname = usePathname();
   const [clients, setClients] = useState<SidebarClient[]>([]);
@@ -50,10 +59,11 @@ export function AppSidebar() {
       .catch(() => {});
   }, []);
 
-  // URL: /dashboard/driver-details/[standAloneId] → segment [3]
-  const activeClientId = pathname.startsWith("/dashboard/driver-details/")
-    ? pathname.split("/")[3] ?? ""
-    : "";
+  // Detect active module from URL: /dashboard/[slug]/[standAloneId]
+  const segments = pathname.split("/");
+  const moduleSlug = segments[2] || "";
+  const activeModule = CLIENT_MODULES.find((m) => m.slug === moduleSlug);
+  const activeClientId = activeModule ? segments[3] ?? "" : "";
 
   return (
     <Sidebar collapsible='icon' className='border-r bg-sidebar'>
@@ -67,35 +77,38 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <CollapsibleTrigger asChild>
                   <SidebarMenuButton
-                    tooltip='Company Management'
+                    tooltip={activeModule?.label || "Company Management"}
                     className='bg-primary text-white hover:bg-primary/90 hover:text-white h-14 px-4 font-medium rounded-none'>
                     <UserRoundCog className='h-5 w-5' />
-                    <span className='text-[16px]'>Company Management</span>
+                    <span className='text-[16px]'>
+                      {activeModule?.label || "Company Management"}
+                    </span>
                     <ChevronDown className='ml-auto h-5 w-5 transition-transform group-data-[state=open]/collapsible:rotate-180' />
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
               </SidebarMenuItem>
 
               <CollapsibleContent>
-                <SidebarMenuSub className='-ml-5 mt-3'>
-                  {clients.map((client, index) => (
-                    <SidebarMenuSubItem key={client.id} className='relative'>
-                      {/* Vertical line */}
-                      {index < clients.length - 1 && (
-                        <div className='absolute left-6 -top-1 bottom-0 w-0.5 bg-muted-foreground ' />
-                      )}
+                {activeModule ? (
+                  <SidebarMenuSub className='-ml-5 mt-3'>
+                    {clients.map((client, index) => (
+                      <SidebarMenuSubItem key={client.id} className='relative'>
+                        {/* Vertical line */}
+                        {index < clients.length - 1 && (
+                          <div className='absolute left-6 -top-1 bottom-0 w-0.5 bg-muted-foreground' />
+                        )}
 
-                      {/* Horizontal branch line */}
-                      <div className='absolute left-6 top-1/2 w-5 h-0.5 bg-muted-foreground' />
+                        {/* Horizontal branch line */}
+                        <div className='absolute left-6 top-1/2 w-5 h-0.5 bg-muted-foreground' />
 
-                      {/* Corner for last item */}
-                      {index === clients.length - 1 && (
-                        <div className='absolute left-6 -top-1 w-0.5 h-7 bg-muted-foreground' />
-                      )}
-                      <SidebarMenuSubButton
-                        asChild
-                        isActive={activeClientId === client.id}
-                        className={`
+                        {/* Corner for last item */}
+                        {index === clients.length - 1 && (
+                          <div className='absolute left-6 -top-1 w-0.5 h-7 bg-muted-foreground' />
+                        )}
+                        <SidebarMenuSubButton
+                          asChild
+                          isActive={activeClientId === client.id}
+                          className={`
     text-(--body-text) hover:text-primary hover:text-base 
     font-normal py-6 pl-14 
     ${
@@ -104,15 +117,20 @@ export function AppSidebar() {
         : ""
     }
   `}>
-                        <Link
-                          href={`/dashboard/driver-details/${client.id}`}
-                          className='block'>
-                          {client.name}
-                        </Link>
-                      </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                  ))}
-                </SidebarMenuSub>
+                          <Link
+                            href={`/dashboard/${activeModule.slug}/${client.id}`}
+                            className='block'>
+                            {client.name}
+                          </Link>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    ))}
+                  </SidebarMenuSub>
+                ) : (
+                  <div className='px-6 py-4 text-sm text-muted-foreground'>
+                    Please select a module from the footer to view clients.
+                  </div>
+                )}
               </CollapsibleContent>
             </Collapsible>
           </SidebarMenu>
