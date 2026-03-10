@@ -40,7 +40,11 @@ export interface SettingMeta {
  * Order here = display order on the Repository Settings page.
  */
 export const SETTINGS_META: SettingMeta[] = [
-  { key: "vehicleList", label: "Vehicle List", href: "/dashboard/vehicle-list" },
+  {
+    key: "vehicleList",
+    label: "Vehicle List",
+    href: "/dashboard/vehicle-list",
+  },
   { key: "spotChecks", label: "Spot Checks", href: "/dashboard/spot-checks" },
   {
     key: "driverDetailsLicenceAndDoc",
@@ -57,7 +61,11 @@ export const SETTINGS_META: SettingMeta[] = [
     label: "Training and Toolbox Talks",
     href: "/dashboard/training",
   },
-  { key: "renewalsTracker", label: "Renewals Tracker", href: "/dashboard/renewals" },
+  {
+    key: "renewalsTracker",
+    label: "Renewals Tracker",
+    href: "/dashboard/renewal-tracker",
+  },
   {
     key: "OCRSChecksAndRectification",
     label: "OCRS checks and rectification action plans",
@@ -68,8 +76,16 @@ export const SETTINGS_META: SettingMeta[] = [
     label: "Traffic Commissioner Communications",
     href: "/dashboard/traffic-commissioner",
   },
-  { key: "transportManager", label: "Transport Manager", href: "/dashboard/transport-manager" },
-  { key: "selfServiceAndLogin", label: "Self service and login", href: "/dashboard/self-service" },
+  {
+    key: "transportManager",
+    label: "Transport Manager",
+    href: "/dashboard/transport-manager",
+  },
+  {
+    key: "selfServiceAndLogin",
+    label: "Self service and login",
+    href: "/dashboard/self-service",
+  },
   { key: "Planner", label: "Planner", href: "/dashboard/planner" },
   {
     key: "PG9sPG13FGClearanceInvesting",
@@ -82,7 +98,11 @@ export const SETTINGS_META: SettingMeta[] = [
     label: "GV79 and Maintenance Provider Communication and Meeting Agenda",
     href: "/dashboard/gv79",
   },
-  { key: "complianceTimetable", label: "Compliance Timetable", href: "/dashboard/compliance-timetable" },
+  {
+    key: "complianceTimetable",
+    label: "Compliance Timetable",
+    href: "/dashboard/compliance-timetable",
+  },
   {
     key: "auditsAndRectificationReports",
     label: "Audits and rectification Reports",

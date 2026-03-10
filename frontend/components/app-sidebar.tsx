@@ -40,6 +40,7 @@ const CLIENT_MODULES: { slug: string; label: string }[] = [
   { slug: "spot-checks", label: "Spot Checks" },
   { slug: "subcontractor-details", label: "Subcontractor Details" },
   { slug: "driver-tachograph", label: "Driver Tachograph" },
+  { slug: "renewal-tracker", label: "Renewal Tracker" },
 ];
 
 export function AppSidebar() {
@@ -55,7 +56,7 @@ export function AppSidebar() {
             res.data.data.map((row) => ({
               id: row.client._id,
               name: row.client.fullName,
-            }))
+            })),
           );
         }
       })
@@ -66,63 +67,62 @@ export function AppSidebar() {
   const segments = pathname.split("/");
   const moduleSlug = segments[2] || "";
   const activeModule = CLIENT_MODULES.find((m) => m.slug === moduleSlug);
-  const activeClientId = activeModule ? segments[3] ?? "" : "";
+  const activeClientId = activeModule ? (segments[3] ?? "") : "";
 
   return (
-    <Sidebar collapsible='icon' className='border-r bg-sidebar'>
+    <Sidebar collapsible="icon" className="bg-sidebar border-r">
       {/* Toggle */}
       <DesktopSidebarToggle />
 
-      <SidebarContent className='flex-1 bg-muted'>
+      <SidebarContent className="bg-muted flex-1">
         <SidebarGroup>
           <SidebarMenu>
-            <Collapsible defaultOpen className='group/collapsible'>
+            <Collapsible defaultOpen className="group/collapsible">
               <SidebarMenuItem>
                 <CollapsibleTrigger asChild>
                   <SidebarMenuButton
                     tooltip={activeModule?.label || "Company Management"}
-                    className='bg-primary text-white hover:bg-primary/90 hover:text-white h-14 px-4 font-medium rounded-none'>
-                    <UserRoundCog className='h-5 w-5' />
-                    <span className='text-[16px]'>
+                    className="bg-primary hover:bg-primary/90 h-14 rounded-none px-4 font-medium text-white hover:text-white"
+                  >
+                    <UserRoundCog className="h-5 w-5" />
+                    <span className="text-[16px]">
                       {activeModule?.label || "Company Management"}
                     </span>
-                    <ChevronDown className='ml-auto h-5 w-5 transition-transform group-data-[state=open]/collapsible:rotate-180' />
+                    <ChevronDown className="ml-auto h-5 w-5 transition-transform group-data-[state=open]/collapsible:rotate-180" />
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
               </SidebarMenuItem>
 
               <CollapsibleContent>
                 {activeModule ? (
-                  <SidebarMenuSub className='-ml-5 mt-3'>
+                  <SidebarMenuSub className="mt-3 -ml-5">
                     {clients.map((client, index) => (
-                      <SidebarMenuSubItem key={client.id} className='relative'>
+                      <SidebarMenuSubItem key={client.id} className="relative">
                         {/* Vertical line */}
                         {index < clients.length - 1 && (
-                          <div className='absolute left-6 -top-1 bottom-0 w-0.5 bg-muted-foreground' />
+                          <div className="bg-muted-foreground absolute -top-1 bottom-0 left-6 w-0.5" />
                         )}
 
                         {/* Horizontal branch line */}
-                        <div className='absolute left-6 top-1/2 w-5 h-0.5 bg-muted-foreground' />
+                        <div className="bg-muted-foreground absolute top-1/2 left-6 h-0.5 w-5" />
 
                         {/* Corner for last item */}
                         {index === clients.length - 1 && (
-                          <div className='absolute left-6 -top-1 w-0.5 h-7 bg-muted-foreground' />
+                          <div className="bg-muted-foreground absolute -top-1 left-6 h-7 w-0.5" />
                         )}
                         <SidebarMenuSubButton
                           asChild
                           isActive={activeClientId === client.id}
-                          className={`
-    text-(--body-text) hover:text-primary hover:text-base 
-    font-normal py-6 pl-14 
-    ${
-      activeClientId === client.id
-        ? "!bg-white! !text-primary! shadow-sm! ml-12 rounded-none pl-3 data-[active=true]:bg-white! data-[active=true]:text-primary!"
-        : ""
-    }
-  `}>
+                          className={`hover:text-primary py-6 pl-14 font-normal text-(--body-text) hover:text-base ${
+                            activeClientId === client.id
+                              ? "!bg-white! !text-primary! data-[active=true]:text-primary! ml-12 rounded-none pl-3 shadow-sm! data-[active=true]:bg-white!"
+                              : ""
+                          } `}
+                        >
                           <Link
                             href={`/dashboard/${activeModule.slug}/${client.id}`}
-                            className='block'>
+                            className="block"
+                          >
                             {client.name}
                           </Link>
                         </SidebarMenuSubButton>
@@ -130,7 +130,7 @@ export function AppSidebar() {
                     ))}
                   </SidebarMenuSub>
                 ) : (
-                  <div className='px-6 py-4 text-sm text-muted-foreground'>
+                  <div className="text-muted-foreground px-6 py-4 text-sm">
                     Please select a module from the footer to view clients.
                   </div>
                 )}
@@ -140,17 +140,19 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className='bg-muted p-3'>
+      <SidebarFooter className="bg-muted p-3">
         <SidebarMenuButton
           asChild
-          className='w-full cursor-pointer justify-start text-destructive hover:bg-destructive/10 hover:text-destructive'>
+          className="text-destructive hover:bg-destructive/10 hover:text-destructive w-full cursor-pointer justify-start"
+        >
           <div
-          onClick={async()=>{
-         const logout = await AuthAction.LogOut();
-         console.log(logout, 'Log Out success'); // ! Must be remove console log
-          }}
-          className='flex items-center gap-2 text-[16px]'>
-            <LogOut className='h-4 w-4' />
+            onClick={async () => {
+              const logout = await AuthAction.LogOut();
+              console.log(logout, "Log Out success"); // ! Must be remove console log
+            }}
+            className="flex items-center gap-2 text-[16px]"
+          >
+            <LogOut className="h-4 w-4" />
             <span>Logout Account</span>
           </div>
         </SidebarMenuButton>
