@@ -3,9 +3,8 @@ import mongoose from 'mongoose';
 import ServerResponse from '../helpers/responses/custom-response';
 import { getSubscriptionRemainingDays } from '../modules/subscription-remain/subscription-remain.service';
 import { AuthenticatedRequest } from './is-authorized';
-import { UserRole } from '../models/user.model';
-import ClientManagement from '../modules/client-management/client-management.model';
-import { ClientStatus } from '../modules/client-management/client-status.enum';
+import { UserRole } from '../models/users-accounts/user.schema';
+import ClientManagement, { ClientStatus } from '../models/users-accounts/clientManagement.schema';
 
 /**
  * Middleware to check if the user (or their connected Transport Manager, if they are a STANDALONE_USER) has an active subscription or trial.
@@ -14,11 +13,7 @@ import { ClientStatus } from '../modules/client-management/client-status.enum';
  * - If the subscription is expired, access is denied with a 403 response.
  * - If there is any error during the process, a 500 response is returned.
  */
-const checkSubscriptionValidity = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+const checkSubscriptionValidity = async (req: Request, res: Response, next: NextFunction) => {
   const authReq = req as AuthenticatedRequest;
   const user = authReq.user;
 
@@ -38,7 +33,7 @@ const checkSubscriptionValidity = async (
 
       // If connected → check manager subscription instead
       if (clientConnection?.managerId) {
-        subscriptionUserId = clientConnection.managerId;
+        subscriptionUserId = clientConnection.managerId.toString();
       }
     }
 
@@ -63,12 +58,7 @@ const checkSubscriptionValidity = async (
 
     // Expired subscription
     if (userSubscription.endDate && userSubscription.endDate < currentDate) {
-      return ServerResponse(
-        res,
-        false,
-        403,
-        'Access denied. Subscription or trial has expired.'
-      );
+      return ServerResponse(res, false, 403, 'Access denied. Subscription or trial has expired.');
     }
 
     // Valid subscription

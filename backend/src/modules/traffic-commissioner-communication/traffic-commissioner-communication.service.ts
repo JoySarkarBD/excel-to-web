@@ -109,11 +109,28 @@ const deleteTrafficCommissionerCommunication = async (
  */
 const getTrafficCommissionerCommunicationById = async (
   id: IdOrIdsInput['id'],
-  accessId?: string
+  options?: {
+    requesterId?: string;
+    requesterRole?: string;
+    standAloneId?: string;
+  }
 ): Promise<Partial<ITrafficCommissionerCommunication | null>> => {
-  const trafficCommissionerCommunication = await TrafficCommissionerCommunicationModel.findById(id);
-  if (!trafficCommissionerCommunication) return null;
-  if (!hasOwnerAccess(trafficCommissionerCommunication, accessId)) return null;
+  const { requesterId, standAloneId } = options || {};
+  const ownerObjectId = standAloneId
+    ? new mongoose.Types.ObjectId(standAloneId)
+    : requesterId
+      ? new mongoose.Types.ObjectId(requesterId)
+      : undefined;
+
+  if (!ownerObjectId) {
+    return TrafficCommissionerCommunicationModel.findById(id).lean();
+  }
+
+  const trafficCommissionerCommunication = await TrafficCommissionerCommunicationModel.findOne({
+    _id: id,
+    $or: [{ standAloneId: ownerObjectId }, { createdBy: ownerObjectId }],
+  }).lean();
+
   return trafficCommissionerCommunication;
 };
 
@@ -124,13 +141,20 @@ const getTrafficCommissionerCommunicationById = async (
  * @returns {Promise<Partial<ITrafficCommissionerCommunication>[]>} - The retrieved traffic-commissioner-communication
  */
 const getManyTrafficCommissionerCommunication = async (
-  query: SearchQueryInput & { standAloneId?: string }
+  query: SearchQueryInput & { standAloneId?: string; requesterId?: string; requesterRole?: string }
 ): Promise<{
   trafficCommissionerCommunications: Partial<ITrafficCommissionerCommunication>[];
   totalData: number;
   totalPages: number;
 }> => {
-  const { searchKey = '', showPerPage = 10, pageNo = 1, standAloneId } = query;
+  const {
+    searchKey = '',
+    showPerPage = 10,
+    pageNo = 1,
+    standAloneId,
+    requesterId,
+    requesterRole,
+  } = query;
   const searchFilter = searchKey
     ? {
         $or: [
@@ -143,15 +167,22 @@ const getManyTrafficCommissionerCommunication = async (
 
   const filter: any = { ...searchFilter };
 
-  if (standAloneId) {
+  // Build owner filter based on role
+  const ownerIds = new Set<string>();
+
+  if (requesterRole === 'TRANSPORT_MANAGER' && standAloneId) {
+    ownerIds.add(String(standAloneId));
+  } else if (requesterId) {
+    ownerIds.add(String(requesterId));
+  }
+
+  if (ownerIds.size > 0) {
+    const ownerObjectIds = Array.from(ownerIds).map((id) => new mongoose.Types.ObjectId(id));
     const ownerFilter = {
-      $or: [
-        { standAloneId: new mongoose.Types.ObjectId(standAloneId) },
-        { createdBy: new mongoose.Types.ObjectId(standAloneId) },
-      ],
+      $or: [{ standAloneId: { $in: ownerObjectIds } }, { createdBy: { $in: ownerObjectIds } }],
     };
 
-    if (Object.keys(filter).length > 0) {
+    if (Object.keys(searchFilter).length > 0) {
       Object.assign(filter, { $and: [searchFilter, ownerFilter] });
       delete filter.$or;
     } else {
@@ -181,4 +212,3 @@ export const trafficCommissionerCommunicationServices = {
   getTrafficCommissionerCommunicationById,
   getManyTrafficCommissionerCommunication,
 };
-

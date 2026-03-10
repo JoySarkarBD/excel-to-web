@@ -40,7 +40,7 @@ const baseCommunicationFields = {
   attachments: z
     .array(z.string().refine(isMongoId, { message: 'Attachments must be valid MongoDB ObjectIds' }))
     .optional(),
-  comments: z.coerce.date({ message: 'Comments must be a valid date string' }).optional(),
+  comments: z.string().trim().max(1000, 'Comments must not exceed 1000 characters').optional(),
   standAloneId: z
     .string()
     .refine(isMongoId, { message: 'standAloneId must be a valid MongoDB ObjectId' })
@@ -122,7 +122,7 @@ const zodUpdateTrafficCommissionerCommunicationSchema = z
         z.string().refine(isMongoId, { message: 'Attachments must be valid MongoDB ObjectIds' })
       )
       .optional(),
-    comments: z.coerce.date({ message: 'Comments must be a valid date string' }).optional(),
+    comments: z.string().trim().max(1000, 'Comments must not exceed 1000 characters').optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: 'At least one field must be provided for update',
@@ -194,4 +194,3 @@ export const validateTrafficCommissionerCommunicationIdParam = validateParams(
 export const validateTrafficCommissionerCommunicationAndManagerIdParam = validateParams(
   zodTrafficCommissionerCommunicationAndManagerIdParamSchema
 );
-

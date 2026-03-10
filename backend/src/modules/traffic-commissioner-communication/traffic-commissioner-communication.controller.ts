@@ -129,21 +129,25 @@ export const getTrafficCommissionerCommunicationById = catchAsync(
     const paramToString = (p?: string | string[]) => (Array.isArray(p) ? p[0] : p);
     const id = paramToString(req.params.id);
 
-    let accessId: string | undefined;
-    if (req.user?.role === UserRole.STANDALONE_USER) {
-      accessId = req.user._id;
-    }
-    if (req.user?.role === UserRole.TRANSPORT_MANAGER) {
-      accessId =
-        paramToString((req.params as any).standAloneId) ||
-        (req.query?.standAloneId as string | undefined);
+    const standAloneId =
+      req.user?.role === UserRole.TRANSPORT_MANAGER
+        ? paramToString((req.params as any).standAloneId) ||
+          (req.query?.standAloneId as string | undefined)
+        : undefined;
+
+    if (req.user?.role === UserRole.TRANSPORT_MANAGER && !standAloneId) {
+      throw new Error('standAloneId is required for transport managers');
     }
 
     // Call the service method to get the traffic-commissioner-communication by ID and get the result
     const result =
       await trafficCommissionerCommunicationServices.getTrafficCommissionerCommunicationById(
         id as string,
-        accessId
+        {
+          requesterId: req.user!._id,
+          requesterRole: req.user!.role,
+          standAloneId,
+        }
       );
     if (!result) throw new Error('Traffic-commissioner-communication not found');
     // Send a success response with the retrieved resource data
@@ -170,7 +174,10 @@ export const getManyTrafficCommissionerCommunication = catchAsync(
     // Use the validated and transformed query from Zod middleware
     const query = {
       ...((req as any).validatedQuery as SearchTrafficCommissionerCommunicationQueryInput),
-    } as SearchQueryInput & { standAloneId?: string };
+    } as SearchQueryInput & { standAloneId?: string; requesterId?: string; requesterRole?: string };
+
+    query.requesterId = req.user!._id;
+    query.requesterRole = req.user!.role;
 
     if (req.user?.role === UserRole.STANDALONE_USER) {
       query.standAloneId = req.user._id;
@@ -183,10 +190,9 @@ export const getManyTrafficCommissionerCommunication = catchAsync(
       throw new Error('Failed to retrieve traffic-commissioner-communications');
     // Send a success response with the retrieved traffic-commissioner-communications data
     ServerResponse(res, true, 200, 'Traffic-commissioner-communications retrieved successfully', {
-      trafficCommissionerCommunications,
+      communications: trafficCommissionerCommunications,
       totalData,
       totalPages,
     });
   }
 );
-
