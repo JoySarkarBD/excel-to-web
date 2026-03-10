@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import mongoose from 'mongoose';
 import { driverTachographServices } from './driver-tachograph.service';
 import { SearchQueryInput } from '../../handlers/common-zod-validator';
 import ServerResponse from '../../helpers/responses/custom-response';
@@ -7,17 +8,41 @@ import { AuthenticatedRequest } from '../../middlewares/is-authorized';
 import { UserRole } from '../../models';
 
 /**
- * Controller function to handle the creation of a single driver-tachograph.
+ * Controller function to handle the creation of a single driver-tachograph as transport manager.
  *
- * @param {Request} req - The request object containing driver-tachograph data in the body.
+ * @param {AuthenticatedRequest} req - The authenticated request object containing driver-tachograph data in the body.
  * @param {Response} res - The response object used to send the response.
  * @returns {Promise<Partial<IDriverTachograph>>} - The created driver-tachograph.
  * @throws {Error} - Throws an error if the driver-tachograph creation fails.
  */
-export const createDriverTachograph = catchAsync(
+export const createDriverTachographAsManager = catchAsync(
   async (req: AuthenticatedRequest, res: Response) => {
+    const userId = req.user!._id;
+    req.body.createdBy = new mongoose.Types.ObjectId(userId);
+    // ensure standAloneId is converted to ObjectId
+    req.body.standAloneId = new mongoose.Types.ObjectId(req.body.standAloneId);
     // Call the service method to create a new driver-tachograph and get the result
-    const result = await driverTachographServices.createDriverTachograph(req.body);
+    const result = await driverTachographServices.createDriverTachographAsManager(req.body);
+    if (!result) throw new Error('Failed to create driver-tachograph');
+    // Send a success response with the created driver-tachograph data
+    ServerResponse(res, true, 201, 'Driver-tachograph created successfully', result);
+  }
+);
+
+/**
+ * Controller function to handle the creation of a single driver-tachograph as standalone user.
+ *
+ * @param {AuthenticatedRequest} req - The authenticated request object containing driver-tachograph data in the body.
+ * @param {Response} res - The response object used to send the response.
+ * @returns {Promise<Partial<IDriverTachograph>>} - The created driver-tachograph.
+ * @throws {Error} - Throws an error if the driver-tachograph creation fails.
+ */
+export const createDriverTachographAsStandAlone = catchAsync(
+  async (req: AuthenticatedRequest, res: Response) => {
+    const userId = req.user!._id;
+    req.body.createdBy = new mongoose.Types.ObjectId(userId);
+    // Call the service method to create a new driver-tachograph and get the result
+    const result = await driverTachographServices.createDriverTachographAsStandAlone(req.body);
     if (!result) throw new Error('Failed to create driver-tachograph');
     // Send a success response with the created driver-tachograph data
     ServerResponse(res, true, 201, 'Driver-tachograph created successfully', result);
@@ -135,4 +160,3 @@ export const getManyDriverTachograph = catchAsync(
     });
   }
 );
-

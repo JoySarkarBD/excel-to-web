@@ -67,6 +67,17 @@ export interface CreateDriverTachographInput {
   standAloneId: string;
 }
 
+/** Input for standalone users (no standAloneId) */
+export interface CreateDriverTachographAsStandAloneInput {
+  driverId: string;
+  vehicleId: string;
+  typeOfInfringement?: string;
+  details?: string;
+  actionTaken?: string;
+  reviewedBy?: string;
+  signed?: boolean;
+}
+
 /** Body for PATCH /vehicle/update-vehicle/:vehicleId/:standAloneId */
 export interface UpdateDriverTachographInput {
   id?: string; // used in UI; not sent in PATCH body

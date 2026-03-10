@@ -9,6 +9,8 @@ import { IdOrIdsInput, SearchQueryInput } from '../../handlers/common-zod-valida
 import { ClientManagement, ClientStatus, UserRole } from '../../models';
 import {
   CreateDriverTachographInput,
+  CreateDriverTachographAsManagerInput,
+  CreateDriverTachographAsStandAloneInput,
   UpdateDriverTachographInput,
 } from './driver-tachograph.validation';
 
@@ -21,62 +23,106 @@ const resolveOwnerId = (entity: any): string | null => {
       : null;
 };
 
-const validateVehicleDriverAndOwner = async (
-  vehicleId: string,
-  driverId: string,
-  standAloneId?: string
-) => {
-  const vehicle = await Vehicle.findById(vehicleId)
+/**
+ * Service function to create a new driver-tachograph as transport manager.
+ *
+ * @param {CreateDriverTachographAsManagerInput} data - The data to create a new driver-tachograph.
+ * @returns {Promise<Partial<IDriverTachograph>>} - The created driver-tachograph.
+ */
+const createDriverTachographAsManager = async (
+  data: CreateDriverTachographAsManagerInput
+): Promise<Partial<IDriverTachograph>> => {
+  // verify vehicle exists
+  const vehicle = await Vehicle.findById(data.vehicleId)
     .select('driverIds standAloneId createdBy')
     .lean();
-
   if (!vehicle) throw new Error('Vehicle does not exist');
 
+  // check if driver is assigned to vehicle
   const isDriverAssignedToVehicle =
     Array.isArray((vehicle as any).driverIds) &&
-    (vehicle as any).driverIds.some((assignedId: any) => assignedId?.toString?.() === driverId);
+    (vehicle as any).driverIds.some(
+      (assignedId: any) => assignedId?.toString?.() === data.driverId.toString()
+    );
 
   if (!isDriverAssignedToVehicle) {
-    throw new Error('Driver does not exist under this vehicle');
+    throw new Error('Driver is not assigned to this vehicle');
   }
 
-  const driver = await Driver.findById(driverId).select('standAloneId createdBy').lean();
+  // verify ownership
+  const vehicleOwnerId = vehicle.standAloneId
+    ? vehicle.standAloneId.toString()
+    : vehicle.createdBy?.toString();
 
-  if (standAloneId) {
-    const vehicleOwnerId = resolveOwnerId(vehicle);
-    if (!vehicleOwnerId) {
-      throw new Error('standAloneId does not exist for this vehicle');
-    }
-    if (vehicleOwnerId !== standAloneId) {
-      throw new Error('Provided standAloneId does not match vehicle and driver owner');
-    }
+  if (!vehicleOwnerId) {
+    throw new Error('Unable to determine vehicle owner');
+  }
 
-    // If driver document exists, also verify same ownership; if not found,
-    // vehicle->driver assignment check above remains the source of truth.
-    if (driver) {
-      const driverOwnerId = resolveOwnerId(driver);
-      if (driverOwnerId && driverOwnerId !== standAloneId) {
-        throw new Error('Provided standAloneId does not match vehicle and driver owner');
-      }
+  if (String(data.standAloneId) !== vehicleOwnerId) {
+    throw new Error('Stand-alone user does not own this vehicle');
+  }
+
+  // verify driver exists and belongs to the same owner
+  const driver = await Driver.findById(data.driverId).select('standAloneId createdBy').lean();
+  if (driver) {
+    const driverOwnerId = driver.standAloneId
+      ? driver.standAloneId.toString()
+      : driver.createdBy?.toString();
+    if (driverOwnerId && driverOwnerId !== vehicleOwnerId) {
+      throw new Error('Driver and vehicle do not belong to the same owner');
     }
   }
+
+  const newDriverTachograph = new DriverTachographModel(data);
+  const savedDriverTachograph = await newDriverTachograph.save();
+  return savedDriverTachograph;
 };
 
 /**
- * Service function to create a new driver-tachograph.
+ * Service function to create a new driver-tachograph as standalone user.
  *
- * @param {CreateDriverTachographInput} data - The data to create a new driver-tachograph.
+ * @param {CreateDriverTachographAsStandAloneInput} data - The data to create a new driver-tachograph.
  * @returns {Promise<Partial<IDriverTachograph>>} - The created driver-tachograph.
  */
-const createDriverTachograph = async (
-  data: CreateDriverTachographInput
+const createDriverTachographAsStandAlone = async (
+  data: CreateDriverTachographAsStandAloneInput
 ): Promise<Partial<IDriverTachograph>> => {
-  const standAloneId = (data as any).standAloneId?.toString?.();
-  await validateVehicleDriverAndOwner(
-    data.vehicleId.toString(),
-    data.driverId.toString(),
-    standAloneId
-  );
+  // verify vehicle exists
+  const vehicle = await Vehicle.findById(data.vehicleId)
+    .select('driverIds standAloneId createdBy')
+    .lean();
+  if (!vehicle) throw new Error('Vehicle does not exist');
+
+  // check if driver is assigned to vehicle
+  const isDriverAssignedToVehicle =
+    Array.isArray((vehicle as any).driverIds) &&
+    (vehicle as any).driverIds.some(
+      (assignedId: any) => assignedId?.toString?.() === data.driverId.toString()
+    );
+
+  if (!isDriverAssignedToVehicle) {
+    throw new Error('Driver is not assigned to this vehicle');
+  }
+
+  // verify ownership
+  const vehicleOwnerId = vehicle.standAloneId
+    ? vehicle.standAloneId.toString()
+    : vehicle.createdBy?.toString();
+
+  if (String((data as any).createdBy) !== vehicleOwnerId) {
+    throw new Error('You are not the owner of this vehicle');
+  }
+
+  // verify driver exists and belongs to the same owner
+  const driver = await Driver.findById(data.driverId).select('standAloneId createdBy').lean();
+  if (driver) {
+    const driverOwnerId = driver.standAloneId
+      ? driver.standAloneId.toString()
+      : driver.createdBy?.toString();
+    if (driverOwnerId && driverOwnerId !== vehicleOwnerId) {
+      throw new Error('Driver and vehicle do not belong to the same owner');
+    }
+  }
 
   const newDriverTachograph = new DriverTachographModel(data);
   const savedDriverTachograph = await newDriverTachograph.save();
@@ -96,15 +142,55 @@ const updateDriverTachograph = async (
   userId: IdOrIdsInput['id'],
   standAloneId?: string
 ): Promise<Partial<IDriverTachograph | null>> => {
-  const existing = await DriverTachographModel.findById(id).select('vehicleId driverId').lean();
+  const existing = await DriverTachographModel.findById(id)
+    .select('vehicleId driverId standAloneId createdBy')
+    .lean();
   if (!existing) return null;
 
-  const effectiveVehicleId = (data.vehicleId || (existing as any).vehicleId)?.toString();
-  const effectiveDriverId = (data.driverId || (existing as any).driverId)?.toString();
+  // Check ownership of the driver-tachograph record itself
+  const tachographOwnerId = resolveOwnerId(existing);
   const accessOwnerId = standAloneId || String(userId);
 
-  if (effectiveVehicleId && effectiveDriverId) {
-    await validateVehicleDriverAndOwner(effectiveVehicleId, effectiveDriverId, accessOwnerId);
+  if (tachographOwnerId !== accessOwnerId) {
+    throw new Error('You do not have permission to update this driver-tachograph');
+  }
+
+  // If updating vehicle or driver, validate the new ones still belong to the same owner
+  if (data.vehicleId || data.driverId) {
+    const effectiveVehicleId = (data.vehicleId || (existing as any).vehicleId)?.toString();
+    const effectiveDriverId = (data.driverId || (existing as any).driverId)?.toString();
+
+    // Verify vehicle ownership and driver assignment
+    const vehicle = await Vehicle.findById(effectiveVehicleId)
+      .select('driverIds standAloneId createdBy')
+      .lean();
+
+    if (!vehicle) throw new Error('Vehicle does not exist');
+
+    const vehicleOwnerId = resolveOwnerId(vehicle);
+    if (vehicleOwnerId !== accessOwnerId) {
+      throw new Error('Vehicle does not belong to you');
+    }
+
+    // Check if driver is assigned to vehicle
+    const isDriverAssignedToVehicle =
+      Array.isArray((vehicle as any).driverIds) &&
+      (vehicle as any).driverIds.some(
+        (assignedId: any) => assignedId?.toString?.() === effectiveDriverId
+      );
+
+    if (!isDriverAssignedToVehicle) {
+      throw new Error('Driver is not assigned to this vehicle');
+    }
+
+    // Verify driver ownership
+    const driver = await Driver.findById(effectiveDriverId).select('standAloneId createdBy').lean();
+    if (driver) {
+      const driverOwnerId = resolveOwnerId(driver);
+      if (driverOwnerId && driverOwnerId !== accessOwnerId) {
+        throw new Error('Driver does not belong to you');
+      }
+    }
   }
 
   // Proceed to update the driver-tachograph
@@ -125,15 +211,18 @@ const deleteDriverTachograph = async (
   userId: IdOrIdsInput['id'],
   standAloneId?: IdOrIdsInput['id']
 ): Promise<Partial<IDriverTachograph | null>> => {
-  const existing = await DriverTachographModel.findById(id).select('vehicleId driverId').lean();
+  const existing = await DriverTachographModel.findById(id)
+    .select('vehicleId driverId standAloneId createdBy')
+    .lean();
   if (!existing) return null;
 
+  // Check ownership of the driver-tachograph record itself
+  const tachographOwnerId = resolveOwnerId(existing);
   const accessOwnerId = String(standAloneId || userId);
-  await validateVehicleDriverAndOwner(
-    (existing as any).vehicleId?.toString(),
-    (existing as any).driverId?.toString(),
-    accessOwnerId
-  );
+
+  if (tachographOwnerId !== accessOwnerId) {
+    throw new Error('You do not have permission to delete this driver-tachograph');
+  }
 
   const deletedDriverTachograph = await DriverTachographModel.findByIdAndDelete(id);
   return deletedDriverTachograph;
@@ -145,9 +234,7 @@ const deleteDriverTachograph = async (
  * @param {IdOrIdsInput['id']} id - The ID of the driver-tachograph to retrieve.
  * @returns {Promise<Partial<IDriverTachograph>>} - The retrieved driver-tachograph.
  */
-const getDriverTachographById = async (
-  id: IdOrIdsInput['id']
-): Promise<any> => {
+const getDriverTachographById = async (id: IdOrIdsInput['id']): Promise<any> => {
   const result = await DriverTachographModel.aggregate([
     { $match: { _id: new mongoose.Types.ObjectId(id as string) } },
 
@@ -259,23 +346,26 @@ const getManyDriverTachograph = async (
     ];
   }
 
+  // Ownership filtering
   const ownerIds = new Set<string>();
 
   if (requesterRole === UserRole.STANDALONE_USER && requesterId) {
+    // Standalone users can only see their own records
     ownerIds.add(String(requesterId));
   }
 
-  if (requesterRole === UserRole.TRANSPORT_MANAGER && requesterId) {
-    ownerIds.add(String(requesterId));
-
+  if (requesterRole === UserRole.TRANSPORT_MANAGER) {
+    // Transport managers must provide standAloneId to see specific client's records
     if (standAloneId) {
       ownerIds.add(String(standAloneId));
     }
+    // If no standAloneId provided, they see no records (or could show error)
   }
 
   if (ownerIds.size > 0) {
     const ownerObjectIds = Array.from(ownerIds).map((id) => new mongoose.Types.ObjectId(id));
 
+    // Find vehicles that belong to the specified owner(s)
     const accessibleVehicles = await Vehicle.find({
       $or: [{ standAloneId: { $in: ownerObjectIds } }, { createdBy: { $in: ownerObjectIds } }],
     })
@@ -284,6 +374,7 @@ const getManyDriverTachograph = async (
 
     const accessibleVehicleIds = accessibleVehicles.map((v) => v._id);
 
+    // Filter driver-tachographs to only show those with accessible vehicles
     matchStage.vehicleId = { $in: accessibleVehicleIds };
   }
 
@@ -376,10 +467,10 @@ const getManyDriverTachograph = async (
 };
 
 export const driverTachographServices = {
-  createDriverTachograph,
+  createDriverTachographAsManager,
+  createDriverTachographAsStandAlone,
   updateDriverTachograph,
   deleteDriverTachograph,
   getDriverTachographById,
   getManyDriverTachograph,
 };
-

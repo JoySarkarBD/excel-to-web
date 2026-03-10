@@ -3,7 +3,8 @@ import { NextFunction, Response, Router } from 'express';
 
 // Import controller from corresponding module
 import {
-  createDriverTachograph,
+  createDriverTachographAsManager,
+  createDriverTachographAsStandAlone,
   deleteDriverTachograph,
   getDriverTachographById,
   getManyDriverTachograph,
@@ -34,9 +35,9 @@ router.use(isAuthorized());
 /**
  * @route POST /api/v1/driver-tachograph/create-driver-tachograph
  * @description Create a new driver-tachograph (Transport Manager)
- * @access Public
- * @param {function} validation - ['validateCreateDriverTachograph']
- * @param {function} controller - ['createDriverTachograph']
+ * @access Private (Transport Manager)
+ * @param {function} validation - ['validateCreateDriverTachographAsManager']
+ * @param {function} controller - ['createDriverTachographAsManager']
  */
 router.post(
   '/create-driver-tachograph',
@@ -44,20 +45,22 @@ router.post(
   // checkSubscriptionValidity,
   validateCreateDriverTachographAsManager,
   validateClientForManagerMiddleware,
-  createDriverTachograph
+  createDriverTachographAsManager
 );
 
 /**
  * @route POST /api/v1/driver-tachograph/create-stand-alone-driver-tachograph
  * @description Create a new driver-tachograph (Standalone User)
  * @access Private (Standalone User)
+ * @param {function} validation - ['validateCreateDriverTachographAsStandAlone']
+ * @param {function} controller - ['createDriverTachographAsStandAlone']
  */
 router.post(
   '/create-stand-alone-driver-tachograph',
   authorizedRoles([UserRole.STANDALONE_USER]),
   // checkSubscriptionValidity,
   validateCreateDriverTachographAsStandAlone,
-  createDriverTachograph
+  createDriverTachographAsStandAlone
 );
 
 /**
