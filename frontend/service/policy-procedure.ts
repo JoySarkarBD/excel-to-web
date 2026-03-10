@@ -42,17 +42,47 @@ const getPolicyProcedures = async (
   if (!token) throw new Error("No authentication token found");
 
   try {
-    const response = await axios.get<
-      IApiResponse<PolicyProcedureListResponse>
-    >(`${base_url}/policy-procedure/get-policy-procedures`, {
-      headers: { Authorization: `Bearer ${token}` },
-      params: {
-        standAloneId,
-        searchKey: params?.searchKey || undefined,
-        showPerPage: params?.showPerPage || 10,
-        pageNo: params?.pageNo || 1,
+    const response = await axios.get<IApiResponse<PolicyProcedureListResponse>>(
+      `${base_url}/policy-procedure/get-policy-procedures`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        params: {
+          standAloneId,
+          searchKey: params?.searchKey || undefined,
+          showPerPage: params?.showPerPage || 10,
+          pageNo: params?.pageNo || 1,
+        },
       },
-    });
+    );
+    return response.data;
+  } catch (error: unknown) {
+    if (axios.isAxiosError<IApiResponse>(error)) {
+      throw new Error(extractApiError(error.response?.data));
+    }
+    throw new Error("Something went wrong");
+  }
+};
+
+const getPolicyProceduresAsStandAlone = async (params?: {
+  searchKey?: string;
+  showPerPage?: number;
+  pageNo?: number;
+}): Promise<IApiResponse<PolicyProcedureListResponse>> => {
+  const token = AuthAction.GetAuthToken();
+  if (!token) throw new Error("No authentication token found");
+
+  try {
+    const response = await axios.get<IApiResponse<PolicyProcedureListResponse>>(
+      `${base_url}/policy-procedure/get-policy-procedures`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        params: {
+          searchKey: params?.searchKey || undefined,
+          showPerPage: params?.showPerPage || 10,
+          pageNo: params?.pageNo || 1,
+        },
+      },
+    );
     return response.data;
   } catch (error: unknown) {
     if (axios.isAxiosError<IApiResponse>(error)) {
@@ -161,6 +191,7 @@ const deletePolicyProcedure = async (
 
 export const PolicyProcedureAction = {
   getPolicyProcedures,
+  getPolicyProceduresAsStandAlone,
   getPolicyProcedure,
   createPolicyProcedure,
   updatePolicyProcedure,

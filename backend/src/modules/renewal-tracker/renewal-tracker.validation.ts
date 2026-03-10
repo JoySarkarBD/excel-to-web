@@ -4,6 +4,13 @@ import { validateBody, validateParams, validateQuery } from '../../handlers/zod-
 import { zodSearchQuerySchema } from '../../handlers/common-zod-validator';
 import { RenewalTrackerStatus } from '../../models/compliance-enforcement-dvsa/renewalTracker.schema';
 
+const optionalDateInput = z.preprocess((value) => {
+  if (value === '' || value === null || value === undefined) {
+    return undefined;
+  }
+  return value;
+}, z.coerce.date().optional());
+
 /**
  * Renewal-tracker Validation Schemas and Types
  *
@@ -34,10 +41,10 @@ const baseRenewalTrackerFields = {
     .refine(isMongoId, { message: 'responsiblePerson must be a valid MongoDB ObjectId' })
     .optional(),
   providerOrIssuer: z.string().trim().optional(),
-  startDate: z.coerce.date().optional(),
-  expiryOrDueDate: z.coerce.date().optional(),
+  startDate: optionalDateInput,
+  expiryOrDueDate: optionalDateInput,
   reminderSet: z.boolean().optional(),
-  reminderDate: z.coerce.date().optional(),
+  reminderDate: optionalDateInput,
   status: z
     .enum(Object.values(RenewalTrackerStatus), {
       message: 'status must be one of the valid renewal tracker status values',
@@ -107,10 +114,10 @@ const zodUpdateRenewalTrackerSchema = z
       .refine(isMongoId, { message: 'responsiblePerson must be a valid MongoDB ObjectId' })
       .optional(),
     providerOrIssuer: z.string().trim().optional(),
-    startDate: z.coerce.date().optional(),
-    expiryOrDueDate: z.coerce.date().optional(),
+    startDate: optionalDateInput,
+    expiryOrDueDate: optionalDateInput,
     reminderSet: z.boolean().optional(),
-    reminderDate: z.coerce.date().optional(),
+    reminderDate: optionalDateInput,
     status: z
       .enum(Object.values(RenewalTrackerStatus), {
         message: 'status must be one of the valid renewal tracker status values',
@@ -189,4 +196,3 @@ export const validateRenewalTrackerIdParam = validateParams(zodRenewalTrackerIdP
 export const validateRenewalTrackerAndManagerIdParam = validateParams(
   zodRenewalTrackerAndManagerIdParamSchema
 );
-

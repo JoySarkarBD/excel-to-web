@@ -15,7 +15,9 @@ export interface RenewalTrackerRow {
   item: string;
   description?: string;
   refOrPolicyNo?: string;
+  refOrPolicyNoName?: string;
   responsiblePerson?: string;
+  responsiblePersonName?: string;
   providerOrIssuer?: string;
   startDate?: string;
   expiryOrDueDate?: string;

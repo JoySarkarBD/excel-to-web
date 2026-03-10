@@ -14,6 +14,7 @@ const editRenewalTrackerSchema = z.object({
   type: z.string().min(1, "Type is required").max(120, "Type is too long"),
   item: z.string().min(1, "Item is required").max(200, "Item is too long"),
   description: z.string().optional(),
+  refOrPolicyNo: z.string().optional(),
   providerOrIssuer: z.string().optional(),
   startDate: z.string().optional(),
   expiryOrDueDate: z.string().optional(),
@@ -24,12 +25,19 @@ const editRenewalTrackerSchema = z.object({
 
 type EditRenewalTrackerForm = z.infer<typeof editRenewalTrackerSchema>;
 
+interface PolicyProcedureOption {
+  value: string;
+  label: string;
+  responsiblePerson: string;
+}
+
 interface EditRenewalTrackerModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: UpdateRenewalTrackerInput) => Promise<void> | void;
   renewalTracker: RenewalTrackerTableRow | null;
   loading: boolean;
+  policyProcedureOptions: PolicyProcedureOption[];
 }
 
 export default function EditRenewalTrackerModal({
@@ -38,6 +46,7 @@ export default function EditRenewalTrackerModal({
   onSubmit,
   renewalTracker,
   loading,
+  policyProcedureOptions,
 }: EditRenewalTrackerModalProps) {
   // Compute defaultValues using useMemo to avoid setState in useEffect
   const defaultValues = useMemo(() => {
@@ -59,6 +68,7 @@ export default function EditRenewalTrackerModal({
       item: renewalTracker.item,
       description:
         renewalTracker.description === "—" ? "" : renewalTracker.description,
+      refOrPolicyNo: renewalTracker.refOrPolicyNoId || "",
       providerOrIssuer:
         renewalTracker.providerOrIssuer === "—"
           ? ""
@@ -91,6 +101,16 @@ export default function EditRenewalTrackerModal({
       label: "Description",
       type: "textarea",
       placeholder: "Enter description (optional)",
+    },
+    {
+      name: "refOrPolicyNo",
+      label: "Ref/Policy No",
+      type: "select",
+      placeholder: "Select policy procedure",
+      options: policyProcedureOptions.map((option) => ({
+        label: option.label,
+        value: option.value,
+      })),
     },
     {
       name: "providerOrIssuer",
@@ -142,7 +162,17 @@ export default function EditRenewalTrackerModal({
             schema={editRenewalTrackerSchema}
             fields={fields}
             defaultValues={defaultValues}
-            onSubmit={onSubmit}
+            onSubmit={(data) => {
+              const selectedPolicyId = data.refOrPolicyNo?.trim()
+                ? data.refOrPolicyNo
+                : undefined;
+
+              onSubmit({
+                ...data,
+                refOrPolicyNo: selectedPolicyId,
+                responsiblePerson: selectedPolicyId,
+              });
+            }}
             submitText="Update Renewal Tracker"
             setOpen={onOpenChange}
           />

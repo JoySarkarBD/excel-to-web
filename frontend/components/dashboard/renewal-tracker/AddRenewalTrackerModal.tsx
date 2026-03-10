@@ -11,6 +11,7 @@ const addRenewalTrackerSchema = z.object({
   type: z.string().min(1, "Type is required").max(120, "Type is too long"),
   item: z.string().min(1, "Item is required").max(200, "Item is too long"),
   description: z.string().optional(),
+  refOrPolicyNo: z.string().optional(),
   providerOrIssuer: z.string().optional(),
   startDate: z.string().optional(),
   expiryOrDueDate: z.string().optional(),
@@ -21,11 +22,18 @@ const addRenewalTrackerSchema = z.object({
 
 type AddRenewalTrackerForm = z.infer<typeof addRenewalTrackerSchema>;
 
+interface PolicyProcedureOption {
+  value: string;
+  label: string;
+  responsiblePerson: string;
+}
+
 interface AddRenewalTrackerModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: CreateRenewalTrackerInput) => Promise<void> | void;
   standAloneId: string;
+  policyProcedureOptions: PolicyProcedureOption[];
 }
 
 export default function AddRenewalTrackerModal({
@@ -33,6 +41,7 @@ export default function AddRenewalTrackerModal({
   onOpenChange,
   onSubmit,
   standAloneId,
+  policyProcedureOptions,
 }: AddRenewalTrackerModalProps) {
   const fields: FieldConfig<AddRenewalTrackerForm>[] = [
     {
@@ -54,6 +63,16 @@ export default function AddRenewalTrackerModal({
       label: "Description",
       type: "textarea",
       placeholder: "Enter description (optional)",
+    },
+    {
+      name: "refOrPolicyNo",
+      label: "Ref/Policy No",
+      type: "select",
+      placeholder: "Select policy procedure",
+      options: policyProcedureOptions.map((option) => ({
+        label: option.label,
+        value: option.value,
+      })),
     },
     {
       name: "providerOrIssuer",
@@ -90,8 +109,14 @@ export default function AddRenewalTrackerModal({
   ];
 
   const handleFormSubmit = async (data: AddRenewalTrackerForm) => {
+    const selectedPolicyId = data.refOrPolicyNo?.trim()
+      ? data.refOrPolicyNo
+      : undefined;
+
     await onSubmit({
       ...data,
+      refOrPolicyNo: selectedPolicyId,
+      responsiblePerson: selectedPolicyId,
       standAloneId,
     });
   };

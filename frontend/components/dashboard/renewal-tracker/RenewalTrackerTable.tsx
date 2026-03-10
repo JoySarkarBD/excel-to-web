@@ -15,6 +15,10 @@ export interface RenewalTrackerTableRow {
   type: string;
   item: string;
   description: string;
+  refOrPolicyNoId: string;
+  refOrPolicyNo: string;
+  responsiblePersonId: string;
+  responsiblePerson: string;
   providerOrIssuer: string;
   startDate: string;
   expiryOrDueDate: string;
@@ -32,6 +36,10 @@ export function toRenewalTrackerTableRows(
     type: rt.type,
     item: rt.item,
     description: rt.description || "—",
+    refOrPolicyNoId: rt.refOrPolicyNo || "",
+    refOrPolicyNo: rt.refOrPolicyNoName || rt.refOrPolicyNo || "—",
+    responsiblePersonId: rt.responsiblePerson || "",
+    responsiblePerson: rt.responsiblePersonName || rt.responsiblePerson || "—",
     providerOrIssuer: rt.providerOrIssuer || "—",
     startDate: rt.startDate ? new Date(rt.startDate).toLocaleDateString() : "—",
     expiryOrDueDate: rt.expiryOrDueDate
@@ -47,6 +55,8 @@ const columns: Column<RenewalTrackerTableRow>[] = [
   { key: "type", title: "Type" },
   { key: "item", title: "Item" },
   { key: "description", title: "Description" },
+  { key: "refOrPolicyNo", title: "Ref/Policy No" },
+  { key: "responsiblePerson", title: "Responsible Person" },
   { key: "providerOrIssuer", title: "Provider/Issuer" },
   { key: "expiryOrDueDate", title: "Expiry/Due Date" },
   {

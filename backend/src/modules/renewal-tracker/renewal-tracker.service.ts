@@ -36,22 +36,43 @@ const hasOwnerAccess = (doc: any, accessId?: string) => {
   );
 };
 
-// Map the responsiblePerson field to its policyName if it's populated
-
-const mapResponsiblePersonName = (tracker: any) => {
+// Map populated PolicyProcedure references to simple display strings.
+const mapPolicyProcedureRefs = (tracker: any) => {
   if (!tracker) return tracker;
 
+  const refOrPolicyNoValue = tracker.refOrPolicyNo;
   const responsiblePersonValue = tracker.responsiblePerson;
-  if (responsiblePersonValue && typeof responsiblePersonValue === 'object') {
-    return {
-      ...tracker,
-      responsiblePerson: responsiblePersonValue.responsiblePerson || '',
-    };
-  }
+
+  const refOrPolicyNoId =
+    refOrPolicyNoValue && typeof refOrPolicyNoValue === 'object'
+      ? String(refOrPolicyNoValue._id || '')
+      : refOrPolicyNoValue
+        ? String(refOrPolicyNoValue)
+        : '';
+
+  const responsiblePersonId =
+    responsiblePersonValue && typeof responsiblePersonValue === 'object'
+      ? String(responsiblePersonValue._id || '')
+      : responsiblePersonValue
+        ? String(responsiblePersonValue)
+        : '';
+
+  const refOrPolicyNoName =
+    refOrPolicyNoValue && typeof refOrPolicyNoValue === 'object'
+      ? refOrPolicyNoValue.policyName || ''
+      : '';
+
+  const responsiblePersonName =
+    responsiblePersonValue && typeof responsiblePersonValue === 'object'
+      ? responsiblePersonValue.responsiblePerson || ''
+      : '';
 
   return {
     ...tracker,
-    responsiblePerson: '',
+    refOrPolicyNo: refOrPolicyNoId,
+    responsiblePerson: responsiblePersonId,
+    refOrPolicyNoName,
+    responsiblePersonName,
   };
 };
 
@@ -64,12 +85,18 @@ const mapResponsiblePersonName = (tracker: any) => {
 const createRenewalTracker = async (
   data: CreateRenewalTrackerInput
 ): Promise<Partial<IRenewalTracker>> => {
+  const payload: any = { ...data };
+
+  // Keep responsiblePerson in sync with selected policy ref.
+  if (payload.refOrPolicyNo) {
+    payload.responsiblePerson = payload.refOrPolicyNo;
+  }
+
   await validatePolicyProcedureRefs({
-    refOrPolicyNo: (data as any).refOrPolicyNo,
-    responsiblePerson: (data as any).responsiblePerson,
+    refOrPolicyNo: payload.refOrPolicyNo,
+    responsiblePerson: payload.responsiblePerson,
   });
 
-  const payload: any = { ...data };
   payload.status = deriveRenewalTrackerStatus({
     startDate: payload.startDate,
     expiryOrDueDate: payload.expiryOrDueDate,
@@ -105,9 +132,16 @@ const updateRenewalTracker = async (
     return null;
   }
 
+  const payload: any = { ...data };
+
+  // Keep responsiblePerson in sync with selected policy ref.
+  if (payload.refOrPolicyNo) {
+    payload.responsiblePerson = payload.refOrPolicyNo;
+  }
+
   await validatePolicyProcedureRefs({
-    refOrPolicyNo: data.refOrPolicyNo,
-    responsiblePerson: data.responsiblePerson,
+    refOrPolicyNo: payload.refOrPolicyNo,
+    responsiblePerson: payload.responsiblePerson,
   });
 
   const existingDates = await RenewalTracker.findById(id)
@@ -125,7 +159,6 @@ const updateRenewalTracker = async (
   const nextReminderDate =
     data.reminderDate !== undefined ? data.reminderDate : (existingDates as any)?.reminderDate;
 
-  const payload: any = { ...data };
   payload.status = deriveRenewalTrackerStatus({
     startDate: nextStartDate,
     expiryOrDueDate: nextDueDate,
@@ -150,7 +183,7 @@ const syncRenewalTrackerStatus = async (): Promise<number> => {
   // current date
   const now = new Date();
 
- const renewalTrackers = await RenewalTracker.find({
+  const renewalTrackers = await RenewalTracker.find({
     expiryOrDueDate: { $lte: now },
   });
 
@@ -206,14 +239,32 @@ const deleteRenewalTracker = async (
  */
 const getRenewalTrackerById = async (
   id: IdOrIdsInput['id'],
-  accessId?: string
+  options: {
+    requesterId: string;
+    requesterRole: UserRole;
+    standAloneId?: string;
+  }
 ): Promise<Partial<IRenewalTracker | null>> => {
-  const renewalTracker = await RenewalTracker.findById(id)
+  const ownerIdForScope =
+    options.requesterRole === UserRole.TRANSPORT_MANAGER
+      ? options.standAloneId
+      : options.requesterId;
+
+  if (!ownerIdForScope) return null;
+
+  const ownerObjectId = new mongoose.Types.ObjectId(String(ownerIdForScope));
+
+  const renewalTracker = await RenewalTracker.findOne({
+    _id: id,
+    $or: [{ standAloneId: ownerObjectId }, { createdBy: ownerObjectId }],
+  })
+    .populate({ path: 'refOrPolicyNo', select: 'policyName' })
     .populate({ path: 'responsiblePerson', select: 'responsiblePerson' })
     .lean();
+
   if (!renewalTracker) return null;
-  if (!hasOwnerAccess(renewalTracker, accessId)) return null;
-  return mapResponsiblePersonName(renewalTracker) as any;
+
+  return mapPolicyProcedureRefs(renewalTracker) as any;
 };
 
 /**
@@ -260,12 +311,8 @@ const getManyRenewalTracker = async (
     ownerIds.add(String(requesterId));
   }
 
-  if (requesterRole === UserRole.TRANSPORT_MANAGER && requesterId) {
-    ownerIds.add(String(requesterId));
-
-    if (standAloneId) {
-      ownerIds.add(String(standAloneId));
-    }
+  if (requesterRole === UserRole.TRANSPORT_MANAGER && standAloneId) {
+    ownerIds.add(String(standAloneId));
   }
 
   if (ownerIds.size > 0) {
@@ -280,12 +327,13 @@ const getManyRenewalTracker = async (
   const totalData = await RenewalTracker.countDocuments(searchFilter);
   const totalPages = Math.ceil(totalData / showPerPage);
   const renewalTrackers = await RenewalTracker.find(searchFilter)
+    .populate({ path: 'refOrPolicyNo', select: 'policyName' })
     .populate({ path: 'responsiblePerson', select: 'responsiblePerson' })
     .skip(skipItems)
     .limit(showPerPage)
     .lean();
 
-  const mappedRenewalTrackers = renewalTrackers.map((tracker) => mapResponsiblePersonName(tracker));
+  const mappedRenewalTrackers = renewalTrackers.map((tracker) => mapPolicyProcedureRefs(tracker));
 
   return { renewalTrackers: mappedRenewalTrackers as any, totalData, totalPages };
 };
@@ -298,4 +346,3 @@ export const renewalTrackerServices = {
   getManyRenewalTracker,
   syncRenewalTrackerStatus,
 };
-

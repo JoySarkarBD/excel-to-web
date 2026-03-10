@@ -124,19 +124,17 @@ export const getRenewalTrackerById = catchAsync(
   async (req: AuthenticatedRequest, res: Response) => {
     const paramToString = (p?: string | string[]) => (Array.isArray(p) ? p[0] : p);
     const renewalTrackerId = paramToString(req.params.id);
+    const standAloneId = paramToString((req.params as any).standAloneId);
 
-    let accessId: string | undefined;
-    if (req.user?.role === UserRole.STANDALONE_USER) {
-      accessId = req.user._id;
-    }
-    if (req.user?.role === UserRole.TRANSPORT_MANAGER) {
-      accessId = paramToString((req.params as any).standAloneId);
+    if (req.user?.role === UserRole.TRANSPORT_MANAGER && !standAloneId) {
+      return ServerResponse(res, false, 400, 'standAloneId is required for transport managers');
     }
 
-    const result = await renewalTrackerServices.getRenewalTrackerById(
-      renewalTrackerId as string,
-      accessId
-    );
+    const result = await renewalTrackerServices.getRenewalTrackerById(renewalTrackerId as string, {
+      requesterId: req.user!._id,
+      requesterRole: req.user!.role,
+      standAloneId,
+    });
     if (!result) throw new Error('Renewal-tracker not found');
     ServerResponse(res, true, 200, 'Renewal-tracker retrieved successfully', result);
   }

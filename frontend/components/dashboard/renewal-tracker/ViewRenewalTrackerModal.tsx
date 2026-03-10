@@ -59,6 +59,25 @@ export default function ViewRenewalTrackerModal({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-gray-700">
+                  Ref/Policy No
+                </label>
+                <p className="mt-1 text-sm text-gray-900">
+                  {renewalTracker.refOrPolicyNo}
+                </p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700">
+                  Responsible Person
+                </label>
+                <p className="mt-1 text-sm text-gray-900">
+                  {renewalTracker.responsiblePerson}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700">
                   Provider/Issuer
                 </label>
                 <p className="mt-1 text-sm text-gray-900">

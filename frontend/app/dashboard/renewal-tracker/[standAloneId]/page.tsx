@@ -15,8 +15,15 @@ import {
   UpdateRenewalTrackerInput,
 } from "@/lib/renewal-tracker/renewal-tracker.types";
 import { RenewalTrackerAction } from "@/service/renewal-tracker";
+import { PolicyProcedureAction } from "@/service/policy-procedure";
 import { use, useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+
+interface PolicyProcedureOption {
+  value: string;
+  label: string;
+  responsiblePerson: string;
+}
 
 interface PageProps {
   params: Promise<{ standAloneId: string }>;
@@ -26,6 +33,9 @@ export default function RenewalTrackerListPage({ params }: PageProps) {
   const { standAloneId } = use(params);
 
   const [rows, setRows] = useState<RenewalTrackerTableRow[]>([]);
+  const [policyProcedureOptions, setPolicyProcedureOptions] = useState<
+    PolicyProcedureOption[]
+  >([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -85,9 +95,58 @@ export default function RenewalTrackerListPage({ params }: PageProps) {
     [standAloneId],
   );
 
+  const fetchPolicyProcedureOptions = useCallback(async () => {
+    try {
+      let policies: Array<{
+        _id: string;
+        policyName: string;
+        responsiblePerson: string;
+      }> = [];
+
+      try {
+        const managerRes = await PolicyProcedureAction.getPolicyProcedures(
+          standAloneId,
+          {
+            showPerPage: 200,
+          },
+        );
+
+        if (managerRes.status && managerRes.data?.policyProcedures) {
+          policies = managerRes.data.policyProcedures;
+        }
+      } catch {
+        // Fallback for standalone-user flows where standAloneId query is not accepted.
+        const standAloneRes =
+          await PolicyProcedureAction.getPolicyProceduresAsStandAlone({
+            showPerPage: 200,
+          });
+        if (standAloneRes.status && standAloneRes.data?.policyProcedures) {
+          policies = standAloneRes.data.policyProcedures;
+        }
+      }
+
+      const options = policies.map((policy) => ({
+        value: policy._id,
+        label: policy.policyName,
+        responsiblePerson: policy.responsiblePerson,
+      }));
+
+      setPolicyProcedureOptions(options);
+    } catch {
+      setPolicyProcedureOptions([]);
+    }
+  }, [standAloneId]);
+
   useEffect(() => {
     fetchRenewalTrackers();
-  }, [fetchRenewalTrackers]);
+    fetchPolicyProcedureOptions();
+  }, [fetchRenewalTrackers, fetchPolicyProcedureOptions]);
+
+  useEffect(() => {
+    if (addOpen || editOpen) {
+      fetchPolicyProcedureOptions();
+    }
+  }, [addOpen, editOpen, fetchPolicyProcedureOptions]);
 
   // Debounced search
   const handleSearchChange = (value: string) => {
@@ -271,6 +330,7 @@ export default function RenewalTrackerListPage({ params }: PageProps) {
         onOpenChange={setAddOpen}
         onSubmit={handleCreateRenewalTracker}
         standAloneId={standAloneId}
+        policyProcedureOptions={policyProcedureOptions}
       />
 
       <ViewRenewalTrackerModal
@@ -292,6 +352,7 @@ export default function RenewalTrackerListPage({ params }: PageProps) {
         onSubmit={handleUpdateRenewalTracker}
         renewalTracker={editRenewalTracker}
         loading={editLoading}
+        policyProcedureOptions={policyProcedureOptions}
       />
 
       <DeleteRenewalTrackerDialog
