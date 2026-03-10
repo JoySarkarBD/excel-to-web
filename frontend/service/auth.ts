@@ -1,4 +1,3 @@
-
 import { base_url } from "@/lib/utils";
 import axios from "axios";
 import Cookies from "js-cookie";
@@ -11,8 +10,8 @@ export interface IRegister {
   role: string;
 }
 export interface ILogin {
-  email:string,
-  password:string
+  email: string;
+  password: string;
 }
 
 export interface ILoginResponseData {
@@ -27,23 +26,22 @@ export interface IApiResponse<T = unknown> {
   message: string;
   data?: T;
   error?: string | Record<string, string>;
-  errors?:string
+  errors?: string | { field?: string; message: string }[];
 }
 
 export interface IVerifyEamil {
-  email:string;
-  token:string
+  email: string;
+  token: string;
 }
 export interface IResendEmail {
-  email:string
+  email: string;
 }
 
-
-export interface  IResetForgetPassword {
-  email:string;
-  token:string;
-  password:string;
-  confirmPassword:string
+export interface IResetForgetPassword {
+  email: string;
+  token: string;
+  password: string;
+  confirmPassword: string;
 }
 
 const RegisterUser = async (data: IRegister): Promise<IApiResponse> => {
@@ -64,20 +62,18 @@ const RegisterUser = async (data: IRegister): Promise<IApiResponse> => {
   }
 };
 
-
-const LoginUser = async(
+const LoginUser = async (
   data: ILogin,
 ): Promise<IApiResponse<ILoginResponseData>> => {
   try {
-  const response = await axios.post<IApiResponse<ILoginResponseData>>(
+    const response = await axios.post<IApiResponse<ILoginResponseData>>(
       `${base_url}/auth/login`,
       data,
     );
 
-  return response.data
-    
+    return response.data;
   } catch (error) {
-      if (axios.isAxiosError<IApiResponse>(error)) {
+    if (axios.isAxiosError<IApiResponse>(error)) {
       const apiError = error.response?.data?.error;
       throw new Error(
         typeof apiError === "string" ? apiError : "Something went wrong",
@@ -85,12 +81,10 @@ const LoginUser = async(
     }
     throw new Error("Something went wrong");
   }
+};
 
-}
-
-
-const VerifyEmail = async(data:IVerifyEamil)=>{
-    try {
+const VerifyEmail = async (data: IVerifyEamil) => {
+  try {
     const response = await axios.patch<IApiResponse>(
       `${base_url}/auth/verify-email`,
       data,
@@ -105,10 +99,10 @@ const VerifyEmail = async(data:IVerifyEamil)=>{
     }
     throw new Error("Something went wrong");
   }
-}
+};
 
-const ResendVerificationEmail = async(data:IResendEmail)=>{
-      try {
+const ResendVerificationEmail = async (data: IResendEmail) => {
+  try {
     const response = await axios.post<IApiResponse>(
       `${base_url}/auth/resend-verification-email`,
       data,
@@ -123,10 +117,9 @@ const ResendVerificationEmail = async(data:IResendEmail)=>{
     }
     throw new Error("Something went wrong");
   }
-
-}
-const ForgotPassword = async(data:IResendEmail)=>{
-      try {
+};
+const ForgotPassword = async (data: IResendEmail) => {
+  try {
     const response = await axios.post<IApiResponse>(
       `${base_url}/auth/forget-password`,
       data,
@@ -141,10 +134,9 @@ const ForgotPassword = async(data:IResendEmail)=>{
     }
     throw new Error("Something went wrong");
   }
-
-}
-const ResetForgetPassword = async(data:IResetForgetPassword)=>{
-      try {
+};
+const ResetForgetPassword = async (data: IResetForgetPassword) => {
+  try {
     const response = await axios.post<IApiResponse>(
       `${base_url}/auth/reset-password`,
       data,
@@ -159,8 +151,7 @@ const ResetForgetPassword = async(data:IResetForgetPassword)=>{
     }
     throw new Error("Something went wrong");
   }
-
-}
+};
 
 const GetAuthToken = (): string | null => {
   return Cookies.get("token") || null;
@@ -183,7 +174,7 @@ const LogOut = async (): Promise<IApiResponse> => {
         headers: {
           Authorization: `Bearer ${token}`,
         },
-      }
+      },
     );
 
     //  Remove token after successful logout
@@ -194,7 +185,7 @@ const LogOut = async (): Promise<IApiResponse> => {
     if (axios.isAxiosError<IApiResponse>(error)) {
       const apiError = error.response?.data?.error;
       throw new Error(
-        typeof apiError === "string" ? apiError : "Something went wrong"
+        typeof apiError === "string" ? apiError : "Something went wrong",
       );
     }
     throw new Error("Something went wrong");

@@ -32,7 +32,14 @@ export type HeaderButton = {
   label: string;
   onClick: (value?: string) => void;
   icon?: React.ReactNode;
-  variant?: "default" | "destructive" | "secondary" | "edit" | "delete" | "view" | "download";
+  variant?:
+    | "default"
+    | "destructive"
+    | "secondary"
+    | "edit"
+    | "delete"
+    | "view"
+    | "download";
   className?: string;
   inputClassName?: string;
   selectTriggerCalssName?: string;
@@ -74,8 +81,12 @@ export default function UniversalTable<T>({
   // State for header and inline search/filter
   const [internalHeaderSearch, setInternalHeaderSearch] = useState("");
   const [internalInlineSearch, setInternalInlineSearch] = useState("");
-  const [activeHeaderFilter, setActiveHeaderFilter] = useState<string | null>(null);
-  const [activeInlineFilter, setActiveInlineFilter] = useState<string | null>(null);
+  const [activeHeaderFilter, setActiveHeaderFilter] = useState<string | null>(
+    null,
+  );
+  const [activeInlineFilter, setActiveInlineFilter] = useState<string | null>(
+    null,
+  );
 
   // Controlled or internal search values
   const headerSearchValue = headerSearch?.value ?? internalHeaderSearch;
@@ -114,28 +125,32 @@ export default function UniversalTable<T>({
     // Header search
     if (headerSearchValue) {
       matchesHeaderSearch = columns.some((col) =>
-        String(row[col.key]).toLowerCase().includes(headerSearchValue.toLowerCase())
+        String(row[col.key])
+          .toLowerCase()
+          .includes(headerSearchValue.toLowerCase()),
       );
     }
 
     // Inline search
     if (inlineSearchValue) {
       matchesInlineSearch = columns.some((col) =>
-        String(row[col.key]).toLowerCase().includes(inlineSearchValue.toLowerCase())
+        String(row[col.key])
+          .toLowerCase()
+          .includes(inlineSearchValue.toLowerCase()),
       );
     }
 
     // Header filter
     if (activeHeaderFilter) {
       matchesHeaderFilter = Object.values(row as Record<string, unknown>).some(
-        (val) => String(val) === activeHeaderFilter
+        (val) => String(val) === activeHeaderFilter,
       );
     }
 
     // Inline filter
     if (activeInlineFilter) {
       matchesInlineFilter = Object.values(row as Record<string, unknown>).some(
-        (val) => String(val) === activeInlineFilter
+        (val) => String(val) === activeInlineFilter,
       );
     }
 
@@ -148,15 +163,16 @@ export default function UniversalTable<T>({
   });
 
   return (
-
     <div>
       {/* Header */}
       <div className="mx-auto p-5">
         {headerActionGroups.map((group, idx) => (
-          <div key={idx} className="flex justify-between items-center mb-4">
-            {group.title && <h2 className="text-2xl font-semibold">{group.title}</h2>}
+          <div key={idx} className="mb-4 flex items-center justify-between">
+            {group.title && (
+              <h2 className="text-2xl font-semibold">{group.title}</h2>
+            )}
 
-            <div className="flex gap-2 items-center">
+            <div className="flex items-center gap-2">
               {/* Starting Action Group */}
               {group.startingActionGroup
                 .filter((btn) => btn.visibility)
@@ -176,7 +192,7 @@ export default function UniversalTable<T>({
 
                   // Handle filter button
                   if (btn.filter) {
-                    console.log(btn)
+                    console.log(btn);
                     return (
                       <div key={idx}>
                         <Select onValueChange={handleHeaderFilterChange}>
@@ -186,7 +202,11 @@ export default function UniversalTable<T>({
                           <SelectContent>
                             <SelectGroup>
                               {btn.options?.map((option, optionIdx) => (
-                                <SelectItem key={optionIdx} value={option} className={btn.selectItemClassName}>
+                                <SelectItem
+                                  key={optionIdx}
+                                  value={option}
+                                  className={btn.selectItemClassName}
+                                >
                                   {option}
                                 </SelectItem>
                               ))}
@@ -213,7 +233,7 @@ export default function UniversalTable<T>({
                 })}
             </div>
             {/* End Action Group */}
-            <div className="flex gap-2 items-center">
+            <div className="flex items-center gap-2">
               {group.endActionGroup
                 .filter((btn) => btn.visibility)
                 .sort((a, b) => (a.positionIndex ?? 0) - (b.positionIndex ?? 0))
@@ -234,7 +254,6 @@ export default function UniversalTable<T>({
                       <Select
                         key={idx}
                         onValueChange={handleHeaderFilterChange}
-
                       >
                         <SelectTrigger className={btn.selectTriggerCalssName}>
                           <SelectValue placeholder={btn.label || "Filter"} />
@@ -242,7 +261,11 @@ export default function UniversalTable<T>({
                         <SelectContent>
                           <SelectGroup>
                             {btn.options?.map((option, optionIdx) => (
-                              <SelectItem className={btn.selectItemClassName} key={optionIdx} value={option}>
+                              <SelectItem
+                                className={btn.selectItemClassName}
+                                key={optionIdx}
+                                value={option}
+                              >
                                 {option}
                               </SelectItem>
                             ))}
@@ -269,20 +292,23 @@ export default function UniversalTable<T>({
         ))}
       </div>
 
-
-      <div className="w-full bg-[#F9F9FA] rounded-lg shadow-sm overflow-x-auto">
+      <div className="w-full overflow-x-auto rounded-lg bg-[#F9F9FA] shadow-sm">
         {/* Inner */}
-        <div className="mx-auto p-5">
+        <div className="mx-auto">
           {/* Inner Action Groups */}
           {innerActionGroup.map((group, idx) => (
-            <div key={idx} className="flex justify-between items-center mb-4">
-              {group.title && <h2 className="text-2xl font-semibold">{group.title}</h2>}
+            <div key={idx} className="mb-4 flex items-center justify-between">
+              {group.title && (
+                <h2 className="text-2xl font-semibold">{group.title}</h2>
+              )}
 
-              <div className="flex gap-2 items-center">
+              <div className="flex items-center gap-2">
                 {/* Starting Action Group for Inner Actions */}
                 {group.startingActionGroup
                   .filter((btn) => btn.visibility)
-                  .sort((a, b) => (a.positionIndex ?? 0) - (b.positionIndex ?? 0))
+                  .sort(
+                    (a, b) => (a.positionIndex ?? 0) - (b.positionIndex ?? 0),
+                  )
                   .map((btn, idx) => {
                     if (btn.search) {
                       return (
@@ -297,10 +323,17 @@ export default function UniversalTable<T>({
 
                     if (btn.filter) {
                       return (
-                        <div key={idx} className={btn.className || "w-40 bg-white"}>
+                        <div
+                          key={idx}
+                          className={btn.className || "w-40 bg-white"}
+                        >
                           <Select onValueChange={handleInlineFilterChange}>
-                            <SelectTrigger className={btn.selectTriggerCalssName}>
-                              <SelectValue placeholder={btn.label || "Filter"} />
+                            <SelectTrigger
+                              className={btn.selectTriggerCalssName}
+                            >
+                              <SelectValue
+                                placeholder={btn.label || "Filter"}
+                              />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectGroup>
@@ -335,11 +368,13 @@ export default function UniversalTable<T>({
                   })}
               </div>
 
-              <div className="flex gap-2 items-center">
+              <div className="flex items-center gap-2">
                 {/* End Action Group for Inner Actions */}
                 {group.endActionGroup
                   .filter((btn) => btn.visibility)
-                  .sort((a, b) => (a.positionIndex ?? 0) - (b.positionIndex ?? 0))
+                  .sort(
+                    (a, b) => (a.positionIndex ?? 0) - (b.positionIndex ?? 0),
+                  )
                   .map((btn, idx) => {
                     if (btn.search) {
                       return (
@@ -354,7 +389,10 @@ export default function UniversalTable<T>({
 
                     if (btn.filter) {
                       return (
-                        <Select key={idx} onValueChange={handleInlineFilterChange}>
+                        <Select
+                          key={idx}
+                          onValueChange={handleInlineFilterChange}
+                        >
                           <SelectTrigger className={btn.selectTriggerCalssName}>
                             <SelectValue placeholder={btn.label || "Filter"} />
                           </SelectTrigger>
@@ -390,7 +428,6 @@ export default function UniversalTable<T>({
               </div>
             </div>
           ))}
-
         </div>
 
         {/* Table */}
@@ -403,10 +440,7 @@ export default function UniversalTable<T>({
                   <TableHead className="">Actions</TableHead>
                 )}
                 {columns.map((col) => (
-                  <TableHead
-                    key={String(col.key)}
-                    className=""
-                  >
+                  <TableHead key={String(col.key)} className="">
                     {col.title}
                   </TableHead>
                 ))}
@@ -439,8 +473,7 @@ export default function UniversalTable<T>({
                     )}
 
                     {columns.map((col) => (
-                      <TableCell key={String(col.key)} className="min-w-[100px]">
-
+                      <TableCell key={String(col.key)} className="min-w-25">
                         {col.render ? col.render(row) : String(row[col.key])}
                       </TableCell>
                     ))}
@@ -467,7 +500,7 @@ export default function UniversalTable<T>({
                 <TableRow>
                   <TableCell
                     colSpan={columns.length + (actions ? 1 : 0)}
-                    className="text-center py-4"
+                    className="py-4 text-center"
                   >
                     No records found
                   </TableCell>
@@ -475,10 +508,7 @@ export default function UniversalTable<T>({
               )}
             </TableBody>
           </Table>
-
         </div>
-
-
       </div>
     </div>
   );

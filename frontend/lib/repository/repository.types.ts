@@ -1,142 +1,112 @@
-export interface NavigationLink {
-  id: string;
+/**
+ * The 21 boolean flags from the backend RepositorySettings schema.
+ * Keys must match the backend field names exactly.
+ */
+export interface RepositorySettingsFlags {
+  vehicleList: boolean;
+  spotChecks: boolean;
+  driverDetailsLicenceAndDoc: boolean;
+  driverTachoGraphAndWTDInfringements: boolean;
+  trainingAndToolboxTalks: boolean;
+  renewalsTracker: boolean;
+  OCRSChecksAndRectification: boolean;
+  trafficCommissionerCommunicate: boolean;
+  transportManager: boolean;
+  selfServiceAndLogin: boolean;
+  Planner: boolean;
+  PG9sPG13FGClearanceInvesting: boolean;
+  contactLog: boolean;
+  GV79DAndMaintenanceProvider: boolean;
+  complianceTimetable: boolean;
+  auditsAndRectificationReports: boolean;
+  fuelUsage: boolean;
+  wheelRetorquePolicyAndMonitoring: boolean;
+  workingTimeDirective: boolean;
+  policyProcedureReviewTracker: boolean;
+  subcontractorDetails: boolean;
+}
+
+/**
+ * Metadata for each setting — display label & dashboard href.
+ */
+export interface SettingMeta {
+  key: keyof RepositorySettingsFlags;
   label: string;
   href: string;
-  enabled: boolean;
 }
 
-// dashboard footer nav links
-export const ALL_NAVIGATION_LINKS = [
+/**
+ * Master list mapping each backend flag key → human label + href.
+ * Order here = display order on the Repository Settings page.
+ */
+export const SETTINGS_META: SettingMeta[] = [
+  { key: "vehicleList", label: "Vehicle List", href: "/dashboard/vehicle-list" },
+  { key: "spotChecks", label: "Spot Checks", href: "/dashboard/spot-checks" },
   {
-    id: "vehicle-list",
-    label: "Vehicle List",
-    href: "/dashboard/vehicle-list",
-    enabled: false,
-  },
-  {
-    id: "spot-checks",
-    label: "Spot Checks",
-    href: "/dashboard/spot-checks",
-    enabled: false,
-  },
-  {
-    id: "driver-details",
+    key: "driverDetailsLicenceAndDoc",
     label: "Driver details, license and WTD infringements",
     href: "/dashboard/driver-details",
-    enabled: false,
   },
   {
-    id: "driver-tachograph",
+    key: "driverTachoGraphAndWTDInfringements",
     label: "Driver tachograph and WTD infringements",
     href: "/dashboard/driver-tachograph",
-    enabled: false,
   },
   {
-    id: "training",
+    key: "trainingAndToolboxTalks",
     label: "Training and Toolbox Talks",
     href: "/dashboard/training",
-    enabled: false,
   },
+  { key: "renewalsTracker", label: "Renewals Tracker", href: "/dashboard/renewals" },
   {
-    id: "renewals",
-    label: "Renewals Tracker",
-    href: "/dashboard/renewals",
-    enabled: false,
-  },
-  {
-    id: "ocrs-checks",
+    key: "OCRSChecksAndRectification",
     label: "OCRS checks and rectification action plans",
     href: "/dashboard/ocrs-checks",
-    enabled: false,
   },
   {
-    id: "traffic-commissioner",
+    key: "trafficCommissionerCommunicate",
     label: "Traffic Commissioner Communications",
     href: "/dashboard/traffic-commissioner",
-    enabled: false,
   },
+  { key: "transportManager", label: "Transport Manager", href: "/dashboard/transport-manager" },
+  { key: "selfServiceAndLogin", label: "Self service and login", href: "/dashboard/self-service" },
+  { key: "Planner", label: "Planner", href: "/dashboard/planner" },
   {
-    id: "transport-manager",
-    label: "Transport Manager",
-    href: "/dashboard/transport-manager",
-    enabled: false,
-  },
-  {
-    id: "self-service",
-    label: "Self service and login",
-    href: "/dashboard/self-service",
-    enabled: false,
-  },
-  {
-    id: "planner",
-    label: "Planner",
-    href: "/dashboard/planner",
-    enabled: false,
-  },
-
-  {
-    id: "pg9s",
+    key: "PG9sPG13FGClearanceInvesting",
     label: "PG9s PG13 FG Clearance Investigation and TC Reporting",
     href: "/dashboard/pg9s",
-    enabled: false,
   },
+  { key: "contactLog", label: "Contact log", href: "/dashboard/contact-log" },
   {
-    id: "contact-log",
-    label: "Contact log",
-    href: "/dashboard/contact-log",
-    enabled: false,
-  },
-  {
-    id: "gv79",
+    key: "GV79DAndMaintenanceProvider",
     label: "GV79 and Maintenance Provider Communication and Meeting Agenda",
     href: "/dashboard/gv79",
-    enabled: false,
   },
+  { key: "complianceTimetable", label: "Compliance Timetable", href: "/dashboard/compliance-timetable" },
   {
-    id: "compliance-timetable",
-    label: "Compliance Timetable",
-    href: "/dashboard/compliance-timetable",
-    enabled: false,
-  },
-  {
-    id: "audits-rectification-reports",
+    key: "auditsAndRectificationReports",
     label: "Audits and rectification Reports",
     href: "/dashboard/audits-rectification-reports",
-    enabled: false,
   },
+  { key: "fuelUsage", label: "Fuel Usage", href: "/dashboard/fuel-usage" },
   {
-    id: "fuel-usage",
-    label: "Fuel Usage",
-    href: "/dashboard/fuel-usage",
-    enabled: false,
-  },
-  {
-    id: "wheel-retorque-monitoring",
+    key: "wheelRetorquePolicyAndMonitoring",
     label: "Wheel Re-torque and Monitoring",
     href: "/dashboard/wheel-retorque-monitoring",
-    enabled: false,
   },
   {
-    id: "working-time-directive",
+    key: "workingTimeDirective",
     label: "Working Time Directive",
     href: "/dashboard/working-time-directive",
-    enabled: false,
   },
   {
-    id: "policy-review-tracker",
+    key: "policyProcedureReviewTracker",
     label: "Policy Procedure Review Tracker",
     href: "/dashboard/policy-review-tracker",
-    enabled: false,
   },
   {
-    id: "subcontractor-details",
+    key: "subcontractorDetails",
     label: "Subcontractor Details",
     href: "/dashboard/subcontractor-details",
-    enabled: false,
   },
 ];
-
-// export the types
-export interface RepositorySettings {
-  navigationLinks: NavigationLink[];
-}

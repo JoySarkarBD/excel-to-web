@@ -135,7 +135,7 @@ function VerifyEmail() {
         <Card className="w-full  overflow-hidden border-0">
           {/* Animated gradient border */}
           <div className="relative h-1.5 w-full overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 animate-gradient" />
+            <div className="absolute inset-0 bg-linear-to-r from-blue-500 via-purple-500 to-pink-500 animate-gradient" />
           </div>
           
           <CardHeader className="space-y-2 pb-6">

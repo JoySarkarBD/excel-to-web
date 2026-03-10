@@ -5,8 +5,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
-import { NavigationCookies } from "@/lib/repository/repository.cookies";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { RepositorySettingsAction } from "@/service/repository-settings";
+import { SETTINGS_META } from "@/lib/repository/repository.types";
+import { REPOSITORY_SETTINGS_UPDATED } from "@/lib/repository/repository.cookies";
 
 export default function DashboardFooter() {
   const { state, isMobile } = useSidebar();
@@ -21,18 +23,29 @@ export default function DashboardFooter() {
   const isExpanded = state === "expanded";
   const sidebarWidth = isMobile ? "0rem" : isExpanded ? "1rem" : "3rem";
 
-  // Load enabled links from cookies
-  useEffect(() => {
-    const loadLinks = () => {
-      const enabledLinks = NavigationCookies.getEnabledLinks();
-      setFooterItems(enabledLinks);
-    };
-
-    loadLinks();
-
-    const interval = setInterval(loadLinks, 500);
-    return () => clearInterval(interval);
+  // Fetch enabled links from API
+  const fetchLinks = useCallback(async () => {
+    try {
+      const res = await RepositorySettingsAction.getSettings();
+      if (res.status && res.data) {
+        const enabled = SETTINGS_META
+          .filter((meta) => res.data![meta.key])
+          .map(({ label, href }) => ({ label, href }));
+        setFooterItems(enabled);
+      }
+    } catch {
+      // Silently ignore — footer simply stays empty until next successful fetch
+    }
   }, []);
+
+  // Fetch once on mount + re-fetch when settings page saves
+  useEffect(() => {
+    fetchLinks();
+
+    const handler = () => fetchLinks();
+    window.addEventListener(REPOSITORY_SETTINGS_UPDATED, handler);
+    return () => window.removeEventListener(REPOSITORY_SETTINGS_UPDATED, handler);
+  }, [fetchLinks]);
 
   // Update maxScroll when items change
   useEffect(() => {
@@ -95,7 +108,7 @@ export default function DashboardFooter() {
             setMaxScroll(container.scrollWidth - container.clientWidth);
           }}>
           {footerItems.map((item, index) => {
-            const isActive = pathname === item.href;
+            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
             return (
               <Link
                 key={index}

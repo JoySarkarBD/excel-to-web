@@ -1,8 +1,10 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import {
   Controller,
   DefaultValues,
+  FieldErrors,
   FieldValues,
   FormProvider,
   useForm,
@@ -41,12 +43,14 @@ export default function UniversalForm<T extends FieldValues>({
   });
 
   const { handleSubmit, control, formState } = methods;
-  const [date, setDate] = useState<Date | undefined>(undefined);
-  const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [datePickerOpen, setDatePickerOpen] = useState<Record<string, boolean>>({});
+  const [calendarMonth, setCalendarMonth] = useState<Record<string, Date | undefined>>({});
 
-  const [calendarMonth, setCalendarMonth] = useState<Date | undefined>(
-    undefined,
-  );
+  const openDatePicker = (name: string, open: boolean) =>
+    setDatePickerOpen((prev) => ({ ...prev, [name]: open }));
+
+  const setFieldCalendarMonth = (name: string, month: Date | undefined) =>
+    setCalendarMonth((prev) => ({ ...prev, [name]: month }));
 
   // State for file previews and drag state
   const [filePreviews, setFilePreviews] = useState<Record<string, string[]>>(
@@ -139,11 +143,26 @@ export default function UniversalForm<T extends FieldValues>({
     }
   };
 
+  // Scroll to and focus the first errored field (in form order)
+  const handleError = (errors: FieldErrors<T>) => {
+    const firstErrorField = fields.find((f) => errors[f.name]);
+    if (firstErrorField) {
+      const el = document.getElementById(String(firstErrorField.name));
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        const focusable = el.querySelector<HTMLElement>(
+          "input:not([type='hidden']), textarea, select, button",
+        );
+        focusable?.focus();
+      }
+    }
+  };
+
   return (
     <FormProvider {...methods}>
       <form
-        onSubmit={handleSubmit(onSubmit)}
-        className="space-y-6 bg-white px-6 dark:bg-gray-800"
+        onSubmit={handleSubmit(onSubmit, handleError)}
+        className="space-y-6 bg-white px-6 pb-4 dark:bg-gray-800"
       >
         <div className="flex justify-between">
           <h2 className="text-primary pb-2 text-2xl font-semibold">{title}</h2>
@@ -153,7 +172,7 @@ export default function UniversalForm<T extends FieldValues>({
         </div>
 
         {fields.map((field) => (
-          <div key={field.name} className="flex flex-col">
+          <div key={field.name} id={String(field.name)} className="flex flex-col">
             {/* Label */}
             {field.type !== "checkbox" &&
               field.type !== "switch" &&
@@ -177,7 +196,7 @@ export default function UniversalForm<T extends FieldValues>({
                 type={field.type}
                 placeholder={field.placeholder}
                 {...methods.register(field.name)} // remove any ---
-                className="border-input-border rounded-none border px-3 py-6 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                className={`border-input-border rounded-none border px-3 py-6 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white ${formState.errors[field.name] ? "border-red-500 border-2" : ""}`}
               />
             )}
 
@@ -186,7 +205,7 @@ export default function UniversalForm<T extends FieldValues>({
               <textarea
                 placeholder={field.placeholder}
                 {...methods.register(field.name)}
-                className="border-input-border h-25 rounded border px-3 py-2 focus:ring-2 focus:ring-rose-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                className={`border-input-border h-25 rounded border px-3 py-2 focus:ring-2 focus:ring-rose-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white ${formState.errors[field.name] ? "border-red-500 border-2" : ""}`}
               />
             )}
 
@@ -198,7 +217,7 @@ export default function UniversalForm<T extends FieldValues>({
                 render={({ field: controllerField }) => (
                   <select
                     {...controllerField}
-                    className="border-input-border rounded border px-3 py-2 focus:ring-2 focus:ring-rose-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                    className={`border-input-border rounded border px-3 py-2 focus:ring-2 focus:ring-rose-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white ${formState.errors[field.name] ? "border-red-500 border-2" : ""}`}
                   >
                     <option value="" disabled>
                       {field.placeholder || "Select an option"}
@@ -297,7 +316,7 @@ export default function UniversalForm<T extends FieldValues>({
 
                   return (
                     <Field>
-                      <InputGroup className="border-input-border rounded-none border px-3 py-6 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                      <InputGroup className={`border-input-border rounded-none border px-3 py-6 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white ${formState.errors[field.name] ? "border-red-500 border-2" : ""}`}>
                         <InputGroupInput
                           value={formatDate(selectedDate)}
                           placeholder={field.placeholder || "Select date"}
@@ -305,15 +324,15 @@ export default function UniversalForm<T extends FieldValues>({
                           onKeyDown={(e) => {
                             if (e.key === "ArrowDown") {
                               e.preventDefault();
-                              setDatePickerOpen(true);
+                              openDatePicker(field.name, true);
                             }
                           }}
                         />
 
                         <InputGroupAddon align="inline-end">
                           <Popover
-                            open={datePickerOpen}
-                            onOpenChange={setDatePickerOpen}
+                            open={!!datePickerOpen[field.name]}
+                            onOpenChange={(open) => openDatePicker(field.name, open)}
                           >
                             <PopoverTrigger asChild>
                               <InputGroupButton variant="ghost" size="icon-xs">
@@ -325,11 +344,15 @@ export default function UniversalForm<T extends FieldValues>({
                               <Calendar
                                 mode="single"
                                 selected={selectedDate}
-                                month={calendarMonth ?? selectedDate}
-                                onMonthChange={setCalendarMonth}
+                                month={calendarMonth[field.name] ?? selectedDate}
+                                onMonthChange={(month) => setFieldCalendarMonth(field.name, month)}
                                 onSelect={(date) => {
-                                  controllerField.onChange(date);
-                                  setDatePickerOpen(false);
+                                  controllerField.onChange(
+                                    date
+                                      ? date.toISOString().split("T")[0]
+                                      : "",
+                                  );
+                                  openDatePicker(field.name, false);
                                 }}
                               />
                             </PopoverContent>
@@ -474,7 +497,14 @@ export default function UniversalForm<T extends FieldValues>({
             disabled={formState.isSubmitting}
             className="bg-primary border-primary cursor-pointer rounded-none border py-4.75 text-white"
           >
-            {formState.isSubmitting ? "Submitting..." : submitText || "Submit"}
+            {formState.isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {submitText ? `${submitText}...` : "Submitting..."}
+              </>
+            ) : (
+              submitText || "Submit"
+            )}
           </Button>
         </div>
       </form>

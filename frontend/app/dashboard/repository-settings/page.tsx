@@ -1,90 +1,122 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { NavigationCookies } from "@/lib/repository/repository.cookies";
-import { NavigationLink } from "@/lib/repository/repository.types";
-import { Search } from "lucide-react";
-import { useEffect, useState } from "react";
 
+import RepositoryHeader from "@/components/dashboard/repository/RepositoryHeader";
+import RepositoryCheckboxGrid from "@/components/dashboard/repository/RepositoryCheckboxGrid";
+import RepositoryConfirmDialog from "@/components/dashboard/repository/RepositoryConfirmDialog";
+
+import { RepositorySettingsAction } from "@/service/repository-settings";
+import { notifyRepositorySettingsUpdated } from "@/lib/repository/repository.cookies";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+  RepositorySettingsFlags,
+  SETTINGS_META,
+} from "@/lib/repository/repository.types";
 
 export default function RepositorySettings() {
-  const [links, setLinks] = useState<NavigationLink[]>([]);
-  const [originalLinks, setOriginalLinks] = useState<NavigationLink[]>([]); // Store original state
+  const [flags, setFlags] = useState<RepositorySettingsFlags | null>(null);
+  const [originalFlags, setOriginalFlags] =
+    useState<RepositorySettingsFlags | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showAlert, setShowAlert] = useState(false);
-  const [pendingChanges, setPendingChanges] = useState<NavigationLink[]>([]); // Store changes before saving
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Load settings on mount
+  // Fetch settings on mount
   useEffect(() => {
-    const timer = setTimeout(() => {
-      // Get merged links (ALL_NAVIGATION_LINKS + saved enabled states)
-      const mergedLinks = NavigationCookies.getMergedLinks();
-      setLinks(mergedLinks);
-      setOriginalLinks(mergedLinks); // Save original state
-    }, 0);
-
-    return () => clearTimeout(timer);
+    const fetch = async () => {
+      try {
+        const res = await RepositorySettingsAction.getSettings();
+        if (res.status && res.data) {
+          setFlags(res.data);
+          setOriginalFlags(res.data);
+        } else {
+          setError(res.message || "Failed to load settings");
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load settings");
+      }
+    };
+    fetch();
   }, []);
 
-  const handleToggle = (linkId: string) => {
-    setLinks((prev) =>
-      prev.map((link) =>
-        link.id === linkId ? { ...link, enabled: !link.enabled } : link,
-      ),
-    );
+  const handleToggle = (key: keyof RepositorySettingsFlags) => {
+    if (!flags) return;
+    setFlags({ ...flags, [key]: !flags[key] });
   };
 
   const handleApply = () => {
-    // Store the current changes before showing alert
-    setPendingChanges([...links]);
     setShowAlert(true);
   };
 
-  const handleConfirmSave = () => {
-    // Actually save to cookies
-    NavigationCookies.saveEnabledStates(pendingChanges);
-    console.log(
-      "Saved enabled states for links:",
-      pendingChanges.filter((l) => l.enabled).map((l) => l.id),
-    );
-    setOriginalLinks(pendingChanges); // Update original state
-    setShowAlert(false);
+  const handleConfirmSave = async () => {
+    if (!flags || !originalFlags) return;
+
+    // Build a partial payload with only changed keys
+    const changed: Partial<RepositorySettingsFlags> = {};
+    for (const meta of SETTINGS_META) {
+      if (flags[meta.key] !== originalFlags[meta.key]) {
+        changed[meta.key] = flags[meta.key];
+      }
+    }
+
+    if (Object.keys(changed).length === 0) {
+      toast.info("No changes to save.");
+      setShowAlert(false);
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const res = await RepositorySettingsAction.updateSettings(changed);
+      if (res.status && res.data) {
+        setFlags(res.data);
+        setOriginalFlags(res.data);
+        notifyRepositorySettingsUpdated();
+        toast.success("Repository settings updated successfully.");
+      } else {
+        toast.error(res.message || "Failed to update settings");
+      }
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to update settings",
+      );
+    } finally {
+      setSaving(false);
+      setShowAlert(false);
+    }
   };
 
   const handleCancelSave = () => {
-    // Revert to original state
-    setLinks(originalLinks);
+    // Revert to last-saved state
+    if (originalFlags) setFlags(originalFlags);
     setShowAlert(false);
   };
 
-  // Get all links to display
-  const displayedLinks =
+  // Filter metadata by search query
+  const displayedMeta =
     searchQuery.trim() === ""
-      ? links // Show all links when search is empty
-      : links.filter((link) =>
-          link.label.toLowerCase().includes(searchQuery.toLowerCase()),
+      ? SETTINGS_META
+      : SETTINGS_META.filter((m) =>
+          m.label.toLowerCase().includes(searchQuery.toLowerCase()),
         );
 
-  // Split 2 equal cols
-  const halfLength = Math.ceil(displayedLinks.length / 2);
-  const leftColumnLinks = displayedLinks.slice(0, halfLength);
-  const rightColumnLinks = displayedLinks.slice(halfLength);
+  // ---------- Loading / Error states ----------
+  if (error) {
+    return (
+      <div className="container mx-auto max-w-6xl py-10">
+        <div className="flex h-64 items-center justify-center">
+          <p className="text-destructive">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
-  if (links.length === 0) {
+  if (!flags) {
     return (
       <div className="container mx-auto max-w-6xl py-10">
         <div className="flex h-64 items-center justify-center">
@@ -94,84 +126,21 @@ export default function RepositorySettings() {
     );
   }
 
+  // ---------- Main UI ----------
   return (
     <div className="mx-auto py-4 lg:mr-10">
-      <div className="mb-8">
-        <div className="flex flex-col justify-between gap-y-3 md:flex-row md:gap-x-3">
-          <h1 className="text-primary mb-2 text-3xl font-bold">Repository</h1>
-          <div className="relative flex max-w-xl items-center text-(--input-foreground)">
-            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-(--input-foreground)" />
-            <Input
-              type="text"
-              placeholder="Search"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-muted text-foreground rounded-none pl-10"
-            />
-          </div>
-        </div>
-        <p className="text-foreground my-4 text-2xl font-semibold">
-          Select Data to Display
-        </p>
-      </div>
+      <RepositoryHeader
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+      />
 
       <Card className="rounded-none border-none shadow-none">
         <CardContent>
-          {/* Show message when search has no results */}
-          {displayedLinks.length === 0 && searchQuery.trim() !== "" && (
-            <div className="text-foreground py-8 text-center">
-              No links found for {searchQuery}
-            </div>
-          )}
-
-          {/* Show grid when there are links to display */}
-          {displayedLinks.length > 0 && (
-            <div className="text-foreground grid grid-cols-2 gap-x-8 gap-y-2">
-              {/* Left Column */}
-              <div className="space-y-2">
-                {leftColumnLinks.map((link) => (
-                  <div
-                    key={link.id}
-                    className="flex items-center space-x-3 py-2"
-                  >
-                    <Checkbox
-                      id={link.id}
-                      checked={link.enabled}
-                      onCheckedChange={() => handleToggle(link.id)}
-                    />
-                    <Label
-                      htmlFor={link.id}
-                      className="text-foreground cursor-pointer text-sm font-normal"
-                    >
-                      {link.label}
-                    </Label>
-                  </div>
-                ))}
-              </div>
-
-              {/* Right Column */}
-              <div className="space-y-2">
-                {rightColumnLinks.map((link) => (
-                  <div
-                    key={link.id}
-                    className="flex items-center space-x-3 py-2"
-                  >
-                    <Checkbox
-                      id={link.id}
-                      checked={link.enabled}
-                      onCheckedChange={() => handleToggle(link.id)}
-                    />
-                    <Label
-                      htmlFor={link.id}
-                      className="cursor-pointer text-sm font-normal"
-                    >
-                      {link.label}
-                    </Label>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          <RepositoryCheckboxGrid
+            items={displayedMeta}
+            flags={flags}
+            onToggle={handleToggle}
+          />
 
           <div className="mt-4 border-t pt-6">
             <Button className="rounded-none px-10" onClick={handleApply}>
@@ -181,29 +150,13 @@ export default function RepositorySettings() {
         </CardContent>
       </Card>
 
-      {/* Alert Dialog */}
-      <AlertDialog open={showAlert} onOpenChange={setShowAlert}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-primary">
-              Apply Repository Settings?
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-foreground">
-              Are you sure you want to save these changes to the footer
-              navigation? Click Save Changes to apply or Cancel to keep the
-              current settings.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleCancelSave}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmSave}>
-              Save Changes
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <RepositoryConfirmDialog
+        open={showAlert}
+        onOpenChange={setShowAlert}
+        onConfirm={handleConfirmSave}
+        onCancel={handleCancelSave}
+        loading={saving}
+      />
     </div>
   );
 }

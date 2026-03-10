@@ -268,27 +268,23 @@ const getManyDriver = async (
   if (searchKey) {
     searchConditions.push({
       $or: [
-        { name: { $regex: searchKey, $options: 'i' } },
+        { fullName: { $regex: searchKey, $options: 'i' } },
         { licenseNumber: { $regex: searchKey, $options: 'i' } },
         { niNumber: { $regex: searchKey, $options: 'i' } },
       ],
     });
   }
 
-  // Get drivers for transport manager based on standAloneId or createdBy (standAloneId is used for both stand alone user and transport manager to filter their own drivers)
+  // For Transport Manager: filter by BOTH standAloneId (the specific client) AND createdBy (the manager).
+  // Using AND ensures we only return drivers belonging to that exact client AND created by this manager.
   if (standAloneId) {
-    andConditions.push({
-      $or: [
-        { standAloneId: new mongoose.Types.ObjectId(standAloneId) },
-        { createdBy: new mongoose.Types.ObjectId(standAloneId) },
-        { createdBy: new mongoose.Types.ObjectId(createdBy!) },
-      ],
-    });
-  } else {
-    // get drivers as stand alone user based on createdBy (which is the same as standAloneId for stand alone users)
+    andConditions.push({ standAloneId: new mongoose.Types.ObjectId(standAloneId) });
     if (createdBy) {
       andConditions.push({ createdBy: new mongoose.Types.ObjectId(createdBy) });
     }
+  } else if (createdBy) {
+    // Stand-alone user: filter by createdBy only
+    andConditions.push({ createdBy: new mongoose.Types.ObjectId(createdBy) });
   }
 
   // Final filter build
